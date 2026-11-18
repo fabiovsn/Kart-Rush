@@ -1,0 +1,66 @@
+KART RUSH v1.0 — MULTIJOGADOR
+=============================
+
+O jogo continua funcionando sozinho (abrindo o kart_rush.html). Para jogar com
+outras pessoas é preciso um servidor: este pacote. Ele serve o jogo e cuida das
+salas e da corrida em tempo real (até 8 karts por sala, vagas livres viram bots).
+
+1) RODAR NO SEU COMPUTADOR (rede de casa / mesma Wi-Fi)
+   - Instale o Node.js 18 ou mais novo (https://nodejs.org).
+   - Abra um terminal nesta pasta e rode:
+         npm install
+         npm start
+   - No seu navegador: http://localhost:8080
+   - Amigos na mesma rede: http://SEU-IP-LOCAL:8080  (ex.: http://192.168.0.15:8080)
+     (no Windows: ipconfig; no Mac/Linux: ifconfig ou ip addr). Libere a porta 8080
+     no firewall se pedir.
+
+   - No CELULAR (mesma Wi-Fi): abra http://SEU-IP-LOCAL:8080 no Chrome ou Safari
+     e jogue com o celular deitado. O jogo detecta o celular sozinho: botões ◀ ▶ à
+     esquerda; ACELERAR, FREIO e DRIFT à direita; II no topo pausa. Celular e
+     computador podem correr juntos na mesma sala.
+     Dica: no Chrome do Android, "Adicionar à tela inicial" abre em tela cheia.
+
+2) JOGAR PELA INTERNET
+   Opção A — hospedar de graça (Render, Railway, Fly.io ou similar):
+   - Suba esta pasta para um repositório no GitHub.
+   - Crie um "Web Service" Node: comando de build "npm install", comando de
+     início "npm start". A plataforma define a porta (variável PORT) sozinha.
+   - Compartilhe o endereço gerado (https://...). O jogo usa wss:// automaticamente.
+   Opção B — túnel a partir do seu PC (sem hospedar):
+   - Com o servidor rodando, use "cloudflared tunnel --url http://localhost:8080"
+     ou "ngrok http 8080" e compartilhe o endereço https que aparecer.
+
+3) COMO FUNCIONAM AS SALAS
+   - Menu > MULTIJOGADOR > digite seu nome.
+   - A lista mostra as salas abertas (pista, voltas, jogadores, situação).
+     ENTRAR entra na sala (cadeado = sala com senha).
+   - + CRIAR SALA: nome, pista (ou aleatória), voltas, máximo de jogadores (2 a 8),
+     completar com bots (sim/não), dificuldade dos bots e senha opcional.
+     Quem cria é o ADMIN.
+   - Dentro da sala cada um escolhe o carro e a pintura e clica ESTOU PRONTO.
+   - O admin vê todos os participantes (carro, pronto, ping), pode EXPULSAR
+     (dois cliques para confirmar; o expulso não volta para a mesma sala),
+     mudar pista/voltas/bots/vagas e clicar INICIAR CORRIDA quando todos estiverem
+     prontos. Vagas que sobrarem viram bots (se "completar" estiver ligado).
+   - Se o admin sair, o próximo jogador vira admin (e passa a pilotar os bots).
+   - No fim, todos voltam para a sala para a próxima corrida.
+
+4) ABRINDO O ARQUIVO DIRETO (kart_rush.html, sem servidor)
+   - Modos solo funcionam normalmente. No MULTIJOGADOR, preencha o campo
+     SERVIDOR com o endereço do servidor (ex.: wss://seu-jogo.onrender.com/ws
+     ou ws://192.168.0.15:8080/ws) e clique CONECTAR.
+
+Arquivos: server.js (servidor), package.json, public/index.html (o jogo).
+Para atualizar o jogo no servidor basta trocar public/index.html.
+
+4) ITENS E RANKING ONLINE
+   - Na sala, o admin escolhe CORRIDA LIMPA ou COM ITENS (turbo, óleo e escudo).
+   - Ranking online: a melhor volta de cada jogador em cada pista (só corridas sem
+     itens) fica salva neste servidor, no arquivo data/ranking.json. Ele aparece na
+     tela de escolha da pista e no resultado de cada corrida, para quem abre o jogo
+     pelo endereço do servidor (ou conecta no multijogador).
+   - Também dá para ver por HTTP: http://SEU-ENDEREÇO:8080/api/ranking/kartpoint
+   - Em hospedagens gratuitas o disco pode ser apagado a cada nova publicação; para
+     não perder o ranking, use um disco persistente da plataforma.
+
