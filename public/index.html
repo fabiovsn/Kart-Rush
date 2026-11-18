@@ -111,6 +111,12 @@
   .fact small { display: block; font-family: system-ui, sans-serif; font-size: 11px; opacity: .7; }
   .fact b { font-weight: normal; font-size: 22px; }
   .opts { display: flex; gap: 26px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  .cfgwrap { position: absolute; top: 116px; left: 50%; transform: translateX(-50%); width: min(860px, 92vw); padding: 22px 28px; box-sizing: border-box; }
+  .cfgtrack { display: flex; gap: 22px; align-items: center; padding-bottom: 14px; border-bottom: 2px solid rgba(255,255,255,.1); }
+  .cfgtrack canvas { width: 240px; height: 126px; flex: none; }
+  .cfgopts { flex-direction: column; align-items: stretch; gap: 14px; margin-top: 18px; }
+  .cfgopts .opt { display: flex; align-items: center; gap: 16px; } .cfgopts .opt > span { width: 150px; font-size: 18px; }
+  body.mobile .cfgwrap { width: 860px; }
   .opt > span { font-size: 15px; opacity: .85; margin-right: 8px; }
   .seg { display: inline-flex; }
   .seg button { font-family: inherit; font-size: 16px; color: #fff; background: rgba(255,255,255,.08); border: 0; padding: 6px 16px; cursor: pointer; transform: skewX(-10deg); margin-right: 3px; }
@@ -208,7 +214,7 @@
   .stepper { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; }
   .stepper button { font-family: inherit; font-size: 22px; color: #fff; background: rgba(255,255,255,.1); border: 0; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; }
   #scr-room .rleft { position: absolute; left: 3%; top: 24px; bottom: 96px; width: min(470px, 46vw); display: flex; flex-direction: column; padding: 14px 16px; box-sizing: border-box; }
-  #scr-room .rright { position: absolute; right: 3%; top: 62px; bottom: 96px; width: min(380px, 36vw); display: flex; flex-direction: column; gap: 12px; }
+  #scr-room .rright { position: absolute; right: 3%; top: 62px; bottom: 96px; width: min(450px, 40vw); display: flex; flex-direction: column; gap: 12px; }
   .rtitle b { font-weight: normal; font-size: 30px; display: block; line-height: 1.1; }
   .rtitle small { font-family: system-ui, sans-serif; font-size: 12px; opacity: .75; }
   .rcount { margin: 8px 0; font-size: 16px; color: #ffd400; }
@@ -231,10 +237,11 @@
   .rtrack { padding: 12px 16px; }
   #rMap { width: 100%; height: 130px; object-fit: contain; display: block; }
   .rsettings { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; font-size: 14px; }
-  .rsettings .frow { margin: 0; } .rsettings .frow > span { width: 110px; font-size: 14px; }
+  .rsettings .frow { margin: 0; flex-wrap: nowrap; } .rsettings .frow > span { width: 104px; flex: none; font-size: 14px; } .rsettings .seg button { font-size: 13px; padding: 5px 9px; }
   .rsettings.ro .seg button:not(.on), .rsettings.ro .stepper button, .rsettings.ro select { pointer-events: none; }
   .rsettings.ro .seg button:not(.on) { opacity: .35; }
   .rcar { padding: 12px 16px; text-align: center; }
+  #scr-room .invite { align-self: flex-start; margin: 2px 0 8px; }
   .rcar small { font-size: 13px; opacity: .75; }
   .carpick { display: flex; align-items: center; justify-content: center; gap: 12px; }
   .carpick b { font-weight: normal; font-size: 34px; min-width: 190px; }
@@ -276,7 +283,7 @@
   /* telas de menu desenhadas para ~720 px de altura: no celular deitado tudo é reduzido proporcionalmente (--uiz) */
   body.mobile .scr, body.mobile .overlay, body.mobile .steps, body.mobile .sndbtn { zoom: var(--uiz, 1); }
   body.mobile kbd { display: none; }
-  body.mobile #scr-room .rleft { width: 470px; } body.mobile #scr-room .rright { width: 380px; }   /* vw encolhe com o zoom: larguras fixas */
+  body.mobile #scr-room .rleft { width: 470px; } body.mobile #scr-room .rright { width: 450px; }   /* vw encolhe com o zoom: larguras fixas */
   body.mobile canvas#game { touch-action: none; }
   body.mobile .help { max-height: 92%; overflow-y: auto; width: 1100px; max-width: 96%; }
   body.mobile .help table:not(.hitems) { display: none; }   /* teclas não se aplicam no celular */
@@ -363,7 +370,7 @@
 </div>
 <div id="rotate"><svg viewBox="0 0 24 24"><path d="M7 1h10a2 2 0 0 1 2 2v18a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2zm0 3v15h10V4z"/></svg>Gire o celular para jogar deitado</div>
 <div id="speedlines"></div>
-<div class="steps" id="steps"><span data-s="car">1 · CARRO</span><span data-s="track">2 · PISTA</span><span data-s="go">3 · LARGADA</span></div>
+<div class="steps" id="steps"><span data-s="car">1 · CARRO</span><span data-s="track">2 · PISTA</span><span data-s="config">3 · CORRIDA</span></div>
 
 <section class="scr" id="scr-title">
   <img class="logoimg" alt="Kart Rush">
@@ -407,17 +414,25 @@
       <div class="tname pop" id="tName"></div>
       <div class="tsub" id="tSub"></div>
       <div class="tfacts" id="tFacts"></div>
-      <div class="opts">
+      <div class="trank" id="tRank"></div>
+    </div>
+  </div>
+  <div class="foot"><button class="btn ghost" data-back>‹ CARRO<kbd>Esc</kbd></button><button class="btn" id="trackOk">PRÓXIMO ›<kbd>Enter</kbd></button></div>
+</section>
+
+<section class="scr shade-full" id="scr-config">
+  <div class="hdr"><h2 class="pop">CONFIGURE A CORRIDA</h2></div>
+  <div class="cfgwrap panel">
+    <div class="cfgtrack"><canvas id="cMap" width="420" height="220"></canvas><div><div class="tname pop" id="cfgName"></div><div class="tsub" id="cfgSub"></div></div></div>
+      <div class="opts cfgopts">
         <div class="opt"><span>VOLTAS</span><div class="seg" id="optLaps"><button data-v="1">1</button><button data-v="3">3</button><button data-v="5">5</button></div></div>
         <div class="opt" id="optItemsRow"><span>ITENS</span><div class="seg" id="optItems"><button data-v="0">CORRIDA LIMPA</button><button data-v="1">COM ITENS</button></div></div>
         <div class="opt"><span>DIFICULDADE</span><div class="seg" id="optDiff"><button data-v="0">FÁCIL</button><button data-v="1">NORMAL</button><button data-v="2">DIFÍCIL</button></div></div>
         <div class="opt"><span>GRÁFICOS</span><div class="seg" id="optGfx"><button data-v="0">BAIXO</button><button data-v="1">MÉDIO</button><button data-v="2">ALTO</button></div></div>
         <div class="opt"><span>CÂMERA</span><div class="seg" id="optCam"><button data-v="0">3ª PESSOA</button><button data-v="1">1ª PESSOA</button></div></div>
       </div>
-      <div class="trank" id="tRank"></div>
-    </div>
   </div>
-  <div class="foot"><button class="btn ghost" data-back>‹ CARRO<kbd>Esc</kbd></button><button class="btn" id="trackOk">CORRER!<kbd>Enter</kbd></button></div>
+  <div class="foot"><button class="btn ghost" data-back>‹ PISTA<kbd>Esc</kbd></button><button class="btn" id="cfgOk">CORRER!<kbd>Enter</kbd></button></div>
 </section>
 
 <section class="scr shade-full" id="scr-cup">
@@ -471,6 +486,7 @@
 <section class="scr" id="scr-room">
   <div class="rleft panel">
     <div class="rtitle"><b class="pop" id="rName"></b><small id="rInfo"></small></div>
+    <button class="btn sm invite" id="rInvite">🔗 CONVIDAR AMIGOS</button>
     <div class="rcount pop" id="rCount"></div>
     <div id="rPlayers"></div>
     <div class="chat"><div id="rChat"></div><input class="inp" id="rChatIn" maxlength="120" placeholder="Mensagem para a sala (Enter envia)"></div>
@@ -2914,7 +2930,7 @@ function garageCamera(dt) {
    TELAS DO MENU
    ========================================================= */
 const RANDOM = 'random';
-const MENU_STATES = ['title', 'main', 'car', 'track', 'help', 'roulette', 'loading', 'cup', 'mp', 'room'];
+const MENU_STATES = ['title', 'main', 'car', 'track', 'config', 'help', 'roulette', 'loading', 'cup', 'mp', 'room'];
 let garageLivery = 'padrao';
 let state = 'title', selCar = 1, selTrackIdx = 1, mainIdx = 0, pauseIdx = 0;
 const TRACK_LIST = [RANDOM, ...TRACKS.map(d => d.id)];
@@ -2922,16 +2938,18 @@ const TRACK_LIST = [RANDOM, ...TRACKS.map(d => d.id)];
 function goScreen(name) {
   state = name;
   document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === 'scr-' + name));
-  const steps = $('steps'), order = ['car', mode === 'cup' ? 'cup' : 'track', 'go'];
-  steps.querySelectorAll('span')[1].dataset.s = order[1]; steps.querySelectorAll('span')[1].textContent = mode === 'cup' ? '2 · CAMPEONATO' : '2 · PISTA';
-  steps.classList.toggle('on', name === 'car' || name === 'track' || name === 'cup');
+  const steps = $('steps'), sp3 = steps.querySelectorAll('span'), order = ['car', mode === 'cup' ? 'cup' : 'track', mode === 'cup' ? 'go' : 'config'];
+  sp3[1].dataset.s = order[1]; sp3[1].textContent = mode === 'cup' ? '2 · CAMPEONATO' : '2 · PISTA';
+  sp3[2].dataset.s = order[2]; sp3[2].textContent = mode === 'cup' ? '3 · LARGADA' : '3 · CORRIDA';
+  steps.classList.toggle('on', name === 'car' || name === 'track' || name === 'cup' || name === 'config');
   steps.querySelectorAll('span').forEach(sp => { const a = order.indexOf(sp.dataset.s), b = order.indexOf(name); sp.classList.toggle('on', a === b); sp.classList.toggle('done', a < b); });
   $('soundBtn').style.display = $('musicBtn').style.display = MENU_STATES.includes(name) && name !== 'loading' ? 'block' : 'none';
   if (MENU_STATES.includes(name)) { Sound.music('menu'); Sound.musicDuck(1);
     Sound.stopRace(); hud.style.display = 'none'; $('results').style.display = 'none'; $('pause').style.display = 'none'; for (const k of karts) k.mesh.visible = false; }
   if (name === 'main') focusMain(mainIdx);
   if (name === 'car') renderCar();
-  if (name === 'track') { renderTrackList(); selectTrackIdx(selTrackIdx, true); document.querySelector('#optDiff').parentNode.style.display = mode === 'tt' ? 'none' : ''; $('optItemsRow').style.display = mode === 'tt' ? 'none' : ''; $('trackOk').firstChild.textContent = mode === 'tt' ? 'CRONOMETRAR!' : 'CORRER!'; }
+  if (name === 'track') { renderTrackList(); selectTrackIdx(selTrackIdx, true); }
+  if (name === 'config') renderConfig();
   if (name === 'cup') renderCups();
   if (name === 'main') { $('podium').style.display = 'none'; }
   if (typeof onScreen === 'function') onScreen(name);
@@ -2940,6 +2958,7 @@ document.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
 function back() {
   if (state === 'car' || state === 'help') goScreen('main');
   else if (state === 'track' || state === 'cup') goScreen('car');
+  else if (state === 'config') goScreen('track');
   else if (state === 'main') goScreen('title');
   else if (state === 'mp') goScreen('main');
 }
@@ -3039,6 +3058,15 @@ function selectTrackIdx(i, instant) {
     } else
     $('tFacts').innerHTML = fact('EXTENSÃO', ext) + fact('CURVAS', info.corners) + fact('SENTIDO', info.cw ? 'Horário' : 'Anti-horário') + fact('RECORDE', rec ? fmt(rec) : '—');
   }
+}
+// tela 3: configuração da corrida (voltas, itens, dificuldade, gráficos, câmera) para a pista escolhida
+function renderConfig() {
+  const id = TRACK_LIST[selTrackIdx], d = TRACKS.find(t => t.id === id);
+  $('cfgName').textContent = d ? d.name.toUpperCase() : 'PISTA ALEATÓRIA';
+  $('cfgSub').textContent = d ? `${d.country} · ${TYPE_LABEL[d.type]}` : 'Uma das 25 pistas será sorteada na largada';
+  drawRoomMap(d ? d.id : 'random', 'cMap');
+  $('optDiff').parentNode.style.display = mode === 'tt' ? 'none' : ''; $('optItemsRow').style.display = mode === 'tt' ? 'none' : '';
+  $('cfgOk').firstChild.textContent = mode === 'tt' ? 'CRONOMETRAR!' : 'CORRER!';
   segSel('optLaps', CONFIG.LAPS); segSel('optDiff', difficulty); segSel('optGfx', quality); segSel('optItems', itemsPref ? 1 : 0); segSel('optCam', camFP ? 1 : 0);
 }
 const fact = (l, v) => `<div class="fact"><small>${l}</small><b>${v}</b></div>`;
@@ -3050,7 +3078,9 @@ const setItems = v => { itemsPref = !!v; store.set('items', itemsPref); segSel('
 document.querySelectorAll('#optItems button, #cupItems button').forEach(b => b.onclick = () => setItems(+b.dataset.v));
 document.querySelectorAll('#optCam button').forEach(b => b.onclick = () => { camFP = +b.dataset.v === 1; store.set('camFP', camFP); segSel('optCam', camFP ? 1 : 0); });
 $('trackOk').onclick = () => confirmTrack();
-function confirmTrack() { cup = null; roulette(selCar, TRACK_LIST[selTrackIdx]); }
+function confirmTrack() { goScreen('config'); }   // pista escolhida -> configuração da corrida
+function startRaceFromConfig() { cup = null; roulette(selCar, TRACK_LIST[selTrackIdx]); }
+$('cfgOk').onclick = () => { Sound.ui.ok(); startRaceFromConfig(); };
 
 // mapa animado da pista
 const tmap = $('tmap'), tctx = tmap.getContext('2d');
@@ -3847,8 +3877,8 @@ function renderRoom() {
   $('rStart').disabled = !allReady;
   $('rStart').innerHTML = allReady ? 'INICIAR CORRIDA<kbd>Enter</kbd>' : `AGUARDANDO PRONTOS (${readyN}/${others.length})`;
 }
-function drawRoomMap(id) {
-  const c = $('rMap'), g = c.getContext('2d'), W = c.width, H = c.height;
+function drawRoomMap(id, cid = 'rMap') {
+  const c = $(cid), g = c.getContext('2d'), W = c.width, H = c.height;
   g.clearRect(0, 0, W, H);
   if (id === 'random') { g.font = '150px "Lilita One", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 10; g.strokeStyle = '#1b1035'; g.strokeText('?', W / 2, H / 2); g.fillStyle = '#ffd400'; g.fillText('?', W / 2, H / 2); return; }
   const d = TRACKS.find(t => t.id === id); if (!d) return;
@@ -3859,6 +3889,27 @@ function drawRoomMap(id) {
   g.lineJoin = 'round'; g.strokeStyle = '#1b1035'; g.lineWidth = 10; g.stroke(); g.strokeStyle = '#ffd400'; g.lineWidth = 5; g.stroke();
   const q0 = p[0]; g.fillStyle = '#fff'; g.beginPath(); g.arc(ox + (q0.x - a) * s, oz + (q0.z - e) * s, 6, 0, 7); g.fill();
 }
+// abriu pelo link de convite (?sala=ID): vai direto para o multijogador, pede o nome e entra na sala
+const INVITE_ROOM = (() => { try { const v = new URLSearchParams(location.search).get('sala'); if (v) history.replaceState(null, '', location.pathname); return v && /^[0-9a-z-]{1,12}$/i.test(v) ? v : null; } catch (e) { return null; } })();
+function openInvite(id) {
+  mode = 'mp'; goScreen('mp');
+  askName(() => {
+    let tries = 0;
+    const go = () => { if (Net.ok && Net.id) netJoin(id, false); else if (++tries < 60) setTimeout(go, 250); else notice('NÃO FOI POSSÍVEL CONECTAR AO SERVIDOR'); };
+    go();
+  });
+  notice('VOCÊ FOI CONVIDADO PARA UMA SALA! DIGITE SEU NOME');
+}
+// link de convite: abre o jogo direto nesta sala (pede só o nome); no celular usa o compartilhar do sistema
+function roomLink() { return location.origin + location.pathname + '?sala=' + encodeURIComponent(Net.room.id); }
+$('rInvite').onclick = async () => {
+  if (!Net.room) return;
+  if (!location.protocol.startsWith('http')) { notice('O CONVITE FUNCIONA COM O JOGO ABERTO PELO ENDEREÇO DO SERVIDOR'); return; }
+  const url = roomLink(), text = `Corre comigo no Kart Rush! Sala "${Net.room.name}"`;
+  if (navigator.share && IS_MOBILE) { try { await navigator.share({ title: 'Kart Rush', text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(url); notice('LINK COPIADO! COLE NO WHATSAPP OU ONDE QUISER'); }
+  catch (e) { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (x) { } t.remove(); if (ok) notice('LINK COPIADO! COLE NO WHATSAPP OU ONDE QUISER'); else prompt('Copie o link da sala:', url); }
+};
 function sendSettings(ch) { if (!amAdmin()) return; netSend('settings', { settings: Object.assign({}, Net.room.settings, ch) }); }
 $('sTrack').onchange = () => sendSettings({ track: $('sTrack').value });
 document.querySelectorAll('#sLaps button').forEach(b => b.onclick = () => sendSettings({ laps: +b.dataset.v }));
@@ -4053,6 +4104,7 @@ addEventListener('keydown', e => {
       if (e.code === 'ArrowUp' || e.code === 'KeyW') selectTrackIdx(selTrackIdx - 1);
       if (e.code === 'ArrowDown' || e.code === 'KeyS') selectTrackIdx(selTrackIdx + 1);
       if (enter) confirmTrack(); if (esc) back(); break;
+    case 'config': if (enter) { Sound.ui.ok(); startRaceFromConfig(); } if (esc) back(); break;
     case 'help': if (enter || esc) back(); break;
     case 'mp': if ($('nameModal').classList.contains('on')) { if (e.code === 'Enter') confirmName(); else if (e.code === 'Escape') $('nameCancel').onclick(); break; }
       if (e.code === 'Escape') { if ($('mpModal').classList.contains('on')) $('mpModal').classList.remove('on'); else if ($('pwModal').classList.contains('on')) $('pwModal').classList.remove('on'); else back(); } break;
@@ -4357,7 +4409,7 @@ goScreen('title');
 $('pressStart').textContent = 'CARREGANDO...';
 document.querySelectorAll('.logoimg').forEach(i => { i.src = 'data:image/webp;base64,' + LOGO_PNG; });
 $('favicon').href = 'data:image/webp;base64,' + ICON_PNG;
-loadAssets().then(() => { assetsReady = true; _regionCache.clear(); showGarageCar(selCar); $('pressStart').textContent = IS_MOBILE ? 'TOQUE PARA COMEÇAR' : 'PRESSIONE ENTER'; });
+loadAssets().then(() => { assetsReady = true; _regionCache.clear(); showGarageCar(selCar); $('pressStart').textContent = IS_MOBILE ? 'TOQUE PARA COMEÇAR' : 'PRESSIONE ENTER'; if (INVITE_ROOM) openInvite(INVITE_ROOM); });
 requestAnimationFrame(frame);
 addEventListener('resize', () => { camera.aspect = VW() / VH(); camera.updateProjectionMatrix(); renderer.setSize(VW(), VH()); if (composer) composer.setSize(VW(), VH()); });
 </script>
