@@ -467,6 +467,7 @@
       <div class="frow"><span>NOME DA SALA</span><input class="inp" id="cName" maxlength="28"></div>
       <div class="frow"><span>PISTA</span><select class="inp" id="cTrack"></select></div>
       <div class="frow"><span>VOLTAS</span><div class="seg" id="cLaps"><button data-v="1">1</button><button data-v="3">3</button><button data-v="5">5</button></div></div>
+      <div class="frow"><span>ITENS</span><div class="seg" id="cItems"><button data-v="0">CORRIDA LIMPA</button><button data-v="1">COM ITENS</button></div></div>
       <div class="frow"><span>MÁX. JOGADORES</span><div class="stepper"><button id="cMaxM">−</button><b id="cMax">8</b><button id="cMaxP">+</button></div></div>
       <div class="frow"><span>COMPLETAR COM BOTS</span><div class="seg" id="cFill"><button data-v="1">SIM, ATÉ 8 KARTS</button><button data-v="0">NÃO</button></div></div>
       <div class="frow"><span>BOTS</span><div class="seg" id="cDiff"><button data-v="0">FÁCIL</button><button data-v="1">NORMAL</button><button data-v="2">DIFÍCIL</button></div></div>
@@ -3763,7 +3764,7 @@ function renderRooms() {
   const html = Net.rooms.map(r => {
     const full = r.count >= r.max, busy = r.state !== 'lobby', can = !full && !busy;
     const sit = busy ? '🏁 Em corrida' : full ? 'Cheia' : 'Aguardando';
-    return `<div class="mproom"><div>${r.locked ? '🔒 ' : ''}${esc(r.name)}<small>admin: ${esc(r.host)}</small></div><div>${trackName(r.track)}</div><div>${r.laps}</div>
+    return `<div class="mproom"><div>${r.locked ? '🔒 ' : ''}${esc(r.name)}<small>admin: ${esc(r.host)}</small></div><div>${trackName(r.track)}<small>${r.items ? '🎁 com itens' : 'corrida limpa'}</small></div><div>${r.laps}</div>
       <div>${r.count}/${r.max}<small>${r.fill ? '+ bots até 8' : 'sem bots'}</small></div><div>${sit}</div>
       <div><button class="btn sm" data-id="${r.id}" data-lock="${r.locked ? 1 : 0}" ${can ? '' : 'disabled'}>ENTRAR</button></div></div>`;
   }).join('');
@@ -3804,21 +3805,21 @@ $('nameIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preven
 $('mpName').onchange = () => { const n = mpName(); if (n) { store.set('mpName', n); netSend('name', { name: n }); } };
 // criar sala
 const trackOptions = (sel) => [`<option value="random">Aleatória</option>`, ...TRACKS.map(t => `<option value="${t.id}">${t.name} (${t.cc})</option>`)].join('').replace(`value="${sel}"`, `value="${sel}" selected`);
-let cForm = { laps: 3, max: 8, fill: 1, diff: 1 };
+let cForm = { laps: 3, max: 8, fill: 1, diff: 1, items: itemsPref ? 1 : 0 };
 $('mpCreate').onclick = () => {
   if (!Net.ok) return mpError('SEM CONEXÃO COM O SERVIDOR');
   const n = needName(); if (!n) return;
   $('cName').value = `Sala de ${n}`; $('cTrack').innerHTML = trackOptions('random'); $('cPass').value = '';
-  segSel('cLaps', cForm.laps); segSel('cFill', cForm.fill); segSel('cDiff', cForm.diff); $('cMax').textContent = cForm.max;
+  segSel('cLaps', cForm.laps); segSel('cItems', cForm.items); segSel('cFill', cForm.fill); segSel('cDiff', cForm.diff); $('cMax').textContent = cForm.max;
   $('mpModal').classList.add('on'); setTimeout(() => $('cName').select(), 50);
 };
-for (const [id, key] of [['cLaps', 'laps'], ['cFill', 'fill'], ['cDiff', 'diff']]) document.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => { cForm[key] = +b.dataset.v; segSel(id, cForm[key]); });
+for (const [id, key] of [['cLaps', 'laps'], ['cItems', 'items'], ['cFill', 'fill'], ['cDiff', 'diff']]) document.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => { cForm[key] = +b.dataset.v; segSel(id, cForm[key]); });
 $('cMaxM').onclick = () => { cForm.max = Math.max(2, cForm.max - 1); $('cMax').textContent = cForm.max; };
 $('cMaxP').onclick = () => { cForm.max = Math.min(8, cForm.max + 1); $('cMax').textContent = cForm.max; };
 $('cCancel').onclick = () => $('mpModal').classList.remove('on');
 $('cOk').onclick = () => {
   netSend('create', { name: $('cName').value, password: $('cPass').value, car: Net.myCar, livery: mpLivery(),
-                      settings: { track: $('cTrack').value, laps: cForm.laps, max: cForm.max, fill: !!cForm.fill, diff: cForm.diff, items: !!itemsPref } });
+                      settings: { track: $('cTrack').value, laps: cForm.laps, max: cForm.max, fill: !!cForm.fill, diff: cForm.diff, items: !!cForm.items } });
 };
 
 /* ---------- sala ---------- */
