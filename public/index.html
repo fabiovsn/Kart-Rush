@@ -323,9 +323,9 @@
   #rotate svg { width: 90px; height: 90px; fill: #ffd400; animation: rotHint 1.6s ease-in-out infinite; }
   @keyframes rotHint { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
   /* celular em pé (ou com a rotação travada): a página gira 90° e o jogo continua deitado — nada fica travado */
-  body.rot90 #touch { --s: min(26vw, 116px); }
-  body.rot90 #scr-title .logoimg { width: min(700px, 88vh); } body.rot90 #scr-main .logoimg { width: min(400px, 70vh); } body.rot90 #loading .logoimg { width: min(420px, 70vh); }   /* girado: a altura útil é a largura da tela */
-  body.rot90 { position: fixed; top: 0; left: 0; width: 100vh; height: 100vw; transform-origin: 0 0; transform: translateX(100vw) rotate(90deg); overflow: hidden; }
+  body.rot90 #touch { --s: min(calc(var(--rh, 100vw) * .26), 116px); }
+  body.rot90 #scr-title .logoimg { width: min(700px, calc(var(--rw, 100vh) * .88)); } body.rot90 #scr-main .logoimg { width: min(400px, calc(var(--rw, 100vh) * .7)); } body.rot90 #loading .logoimg { width: min(420px, calc(var(--rw, 100vh) * .7)); }   /* girado: a altura útil é a largura da tela */
+  body.rot90 { position: fixed; top: 0; left: 0; width: var(--rw, 100vh); height: var(--rh, 100vw); transform-origin: 0 0; transform: translateX(var(--rh, 100vw)) rotate(90deg); overflow: hidden; }   /* --rw/--rh: tamanho visível em px (JS) */
 </style>
 </head>
 <body>
@@ -667,7 +667,8 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuff
 renderer.domElement.id = 'game';
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 const ROT90 = () => document.body && document.body.classList.contains('rot90');   // celular em pé: o jogo roda deitado mesmo assim
-const VW = () => ROT90() ? innerHeight : innerWidth, VH = () => ROT90() ? innerWidth : innerHeight;
+const viewW = () => Math.round(window.visualViewport ? visualViewport.width : innerWidth), viewH = () => Math.round(window.visualViewport ? visualViewport.height : innerHeight);   // área realmente visível
+const VW = () => ROT90() ? viewH() : innerWidth, VH = () => ROT90() ? viewW() : innerHeight;
 renderer.setSize(VW(), VH());
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -2204,7 +2205,7 @@ function setupKarts(spec) {
              drift: { active: false, dir: 0, charge: 0, level: 0 }, boost: 0, boostLevel: 0, hop: 0, visYaw: 0,
              baseSkill: e.skill ?? (e.kind === 'bot' ? rand(...DIFF[difficulty]) : 1), skill: 1, steerIn: 0, phase: Math.random() * 10,
              pers: e.pers || makePersonality(), slip: 0, slipHold: 0, spin: 0, spinDir: 1, startPen: 0, mistake: 0, isHuman: e.human ?? (e.kind !== 'bot'), isBotNet: !!e.bot };
-    if (e.tag) { k.tagSprite = nameTag(e.name, car.color); k.tagSprite.position.y = 4.6; mesh.add(k.tagSprite); }
+    if (e.tag) { k.tagSprite = nameTag(e.name, car.color); k.tagSprite.position.y = 3.25; mesh.add(k.tagSprite); }
     return k;
   });
   player = karts.find(k => k.isPlayer) || karts[0];
@@ -2217,8 +2218,8 @@ function nameTag(text, color) {
   g.fillStyle = 'rgba(20,10,50,.75)'; g.beginPath(); g.roundRect ? g.roundRect(128 - w / 2, 8, w, 48, 14) : g.rect(128 - w / 2, 8, w, 48); g.fill();
   g.fillStyle = '#' + new THREE.Color(color).getHexString(); g.fillRect(128 - w / 2 + 8, 26, 10, 12);
   g.lineWidth = 6; g.strokeStyle = '#1b1035'; g.strokeText(text, 134, 33); g.fillStyle = '#fff'; g.fillText(text, 134, 33);
-  const t = new THREE.CanvasTexture(c); const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true }));
-  sp.scale.set(4.2, 1.05, 1); sp.renderOrder = 5; return sp;
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 4; const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true, opacity: 0.82, fog: false }));
+  sp.scale.set(3.4, 0.85, 1); sp.renderOrder = 5; sp.userData.base = 3.4; return sp;
 }
 function resetKart(k) {
   const slot = T.gridSlots[k.slot], idx = slot.idx, p = T.pts[idx], n = T.nors[idx], t = T.tans[idx];
@@ -2581,6 +2582,11 @@ function kartEffects(k) {
 
 function syncMesh(k, dt) {
   const { body, wheels, front } = k.mesh.userData;
+  if (k.tagSprite) {   // nome sobre a cabeça: cresce um pouco com a distância (legível) e some bem longe
+    const d = k.mesh.position.distanceTo(camera.position), f = clamp(d / 14, 1, 2.6), b = k.tagSprite.userData.base;
+    k.tagSprite.scale.set(b * f, b * f / 4, 1); k.tagSprite.position.y = 3.0 + f * 0.35;
+    k.tagSprite.material.opacity = d > 140 ? 0 : d > 100 ? 0.82 * (140 - d) / 40 : 0.82; k.tagSprite.visible = !k.gone && d < 140;
+  }
   k.mesh.position.set(k.pos.x, k.y, k.pos.z);
   k.mesh.rotation.y = k.yaw;
   const targetVis = k.spin > 0 ? 0 : k.drift.active ? -k.drift.dir * 0.38 : 0;
@@ -3883,7 +3889,7 @@ function netStartRace(race) {
   const def = TRACKS.find(t => t.id === race.track) || TRACKS[0];
   CONFIG.LAPS = race.laps; difficulty = race.diff; mode = 'mp'; cup = null;
   const spec = race.grid.map(g => ({ car: g.car, livery: g.livery, id: g.id, name: g.id === Net.id ? (mpName() || 'Você') : g.name, bot: g.bot,
-    kind: g.id === Net.id ? 'player' : (g.bot && myAdmin ? 'bot' : 'remote'), human: !g.bot, skill: g.skill, pers: g.pers, tag: g.id !== Net.id }));
+    kind: g.id === Net.id ? 'player' : (g.bot && myAdmin ? 'bot' : 'remote'), human: !g.bot, skill: g.skill, pers: g.pers, tag: g.id !== Net.id && !g.bot }));   // nome sobre a cabeça dos outros jogadores
   $('mpModal').classList.remove('on');
   beginLoading(Net.myCar, def, spec);
 }
@@ -4112,8 +4118,17 @@ if (IS_MOBILE) {
   $('tbP').onclick = () => pauseGame();
   $('tbC').addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); toggleCam(); }, { passive: false });
   $('tbI').dataset.k = 'i';
-  const setRot = () => { const want = innerHeight > innerWidth * 1.05; if (want !== document.body.classList.contains('rot90')) { document.body.classList.toggle('rot90', want); dispatchEvent(new Event('resize')); } };
-  setRot(); addEventListener('resize', setRot); addEventListener('orientationchange', () => setTimeout(setRot, 250));
+  // celular em pé: a página gira 90° com o tamanho da área visível em px (100vh/100vw do Safari incluem as barras e esticavam tudo)
+  const setRot = () => {
+    const w = viewW(), h = viewH(), want = h > w * 1.05, bs = document.body.style;
+    const sizeKey = want ? h + 'x' + w : '';
+    if (want) { bs.setProperty('--rw', h + 'px'); bs.setProperty('--rh', w + 'px'); }
+    if (want !== document.body.classList.contains('rot90') || sizeKey !== setRot.k) {
+      setRot.k = sizeKey; document.body.classList.toggle('rot90', want); scrollTo(0, 0); dispatchEvent(new Event('resize'));
+    }
+  };
+  setRot(); addEventListener('resize', setRot); addEventListener('orientationchange', () => setTimeout(setRot, 300));
+  if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(setRot, 50));   // barras do Safari aparecem/somem
   const fitUI = () => { document.body.style.setProperty('--uiz', Math.max(0.42, Math.min(1, VH() / 700, VW() / 1150)).toFixed(3)); rects = null; };
   fitUI(); addEventListener('resize', fitUI);
   addEventListener('orientationchange', () => { rects = null; });
