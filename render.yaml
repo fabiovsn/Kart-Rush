@@ -11,6 +11,11 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      # Ranking persistente grátis (Upstash Redis): preencha no painel do Render
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
     # Ranking online persistente (só em planos pagos, com disco):
     # disk:
     #   name: kart-rush-data
