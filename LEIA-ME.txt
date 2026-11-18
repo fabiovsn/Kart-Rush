@@ -56,11 +56,12 @@ Para atualizar o jogo no servidor basta trocar public/index.html.
 
 4) ITENS E RANKING ONLINE
    - Na sala, o admin escolhe CORRIDA LIMPA ou COM ITENS (turbo, óleo e escudo).
-   - Ranking online: a melhor volta de cada jogador em cada pista (só corridas sem
-     itens) fica salva neste servidor, no arquivo data/ranking.json. Ele aparece na
-     tela de escolha da pista e no resultado de cada corrida, para quem abre o jogo
-     pelo endereço do servidor (ou conecta no multijogador).
-   - Também dá para ver por HTTP: http://SEU-ENDEREÇO:8080/api/ranking/kartpoint
-   - Em hospedagens gratuitas o disco pode ser apagado a cada nova publicação; para
-     não perder o ranking, use um disco persistente da plataforma.
+   - Ranking online: toda volta completada por um jogador (nunca bots) é enviada na
+     hora; fica a melhor de cada jogador por pista, separada em solo / multijogador
+     e com / sem itens. Menu RANKING: 10 melhores de cada pista (ou o recorde de
+     todas), com filtros. Na escolha da pista aparece o recorde.
+   - No solo, a opção NOME escolhe entre o seu nome e o nome do piloto do carro.
+   - Guardado no Upstash Redis (variáveis UPSTASH_REDIS_REST_URL e
+     UPSTASH_REDIS_REST_TOKEN — veja o README) ou, sem elas, em data/ranking.json.
+   - Também por HTTP: http://SEU-ENDEREÇO:8080/api/ranking  e  /api/ranking/kartpoint
 

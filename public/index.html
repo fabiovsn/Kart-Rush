@@ -62,7 +62,7 @@
   .press { position: absolute; bottom: 5%; left: 0; right: 0; text-align: center; font-size: 30px; animation: blink 1.3s infinite; cursor: pointer; }
   #scr-main .logo { position: absolute; top: 7%; left: 6%; font-size: 72px; text-align: left; }
   .mainnav { position: absolute; left: 6%; top: 30%; display: flex; flex-direction: column; gap: 10px; }
-  #mainnav .mi { padding: 9px 30px; } #mainnav .mi b { font-size: 29px; }
+  #mainnav { top: 28%; gap: 7px; } #mainnav .mi { padding: 6px 30px; } #mainnav .mi b { font-size: 25px; } #mainnav .mi small { font-size: 12px; }
   .mi { font-family: inherit; text-align: left; color: #fff; background: rgba(255,255,255,.07); border: 0; border-left: 6px solid transparent; padding: 14px 30px; width: 440px; max-width: 86vw; transform: skewX(-8deg); cursor: pointer; transition: transform .15s, background .15s; }
   .mi b { display: block; font-size: 34px; font-weight: normal; text-shadow: 0 2px 0 var(--stroke); }
   .mi small { font-family: system-ui, sans-serif; font-size: 13px; opacity: .78; }
@@ -117,6 +117,22 @@
   .cfgopts { flex-direction: column; align-items: stretch; gap: 14px; margin-top: 18px; }
   .cfgopts .opt { display: flex; align-items: center; gap: 16px; } .cfgopts .opt > span { width: 150px; font-size: 18px; }
   body.mobile .cfgwrap { width: 860px; }
+  #cMap { height: 150px; width: auto; }
+  .pnameIn { width: 210px; padding: 6px 10px; font-size: 15px; }
+  .cupopts .pnameIn { width: 150px; }
+  /* tela de ranking */
+  .rkwrap { position: absolute; top: 108px; bottom: 96px; left: 50%; transform: translateX(-50%); width: min(980px, 94vw); display: flex; flex-direction: column; padding: 16px 22px; box-sizing: border-box; }
+  .rkfilters { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin-bottom: 12px; }
+  .rkfilters .opt { display: flex; align-items: center; gap: 8px; } .rkfilters select { min-width: 220px; }
+  .rkbody { flex: 1; overflow-y: auto; font-family: system-ui, sans-serif; }
+  .rktable { width: 100%; border-collapse: collapse; font-size: 16px; }
+  .rktable th { text-align: left; font: 13px 'Lilita One', sans-serif; letter-spacing: 1px; color: #ffd400; font-weight: normal; padding: 4px 8px; position: sticky; top: 0; background: #241650; }
+  .rktable td { padding: 6px 8px; border-top: 1px solid rgba(255,255,255,.08); }
+  .rktable tr.me td { color: #ffd400; } .rktable td.pos { width: 40px; font-weight: bold; } .rktable td.t { font-variant-numeric: tabular-nums; font-weight: bold; }
+  .rktable tr.trk { cursor: pointer; } .rktable tr.trk:hover td { background: rgba(255,255,255,.06); }
+  .rktag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.12); margin-right: 4px; white-space: nowrap; }
+  .rkmsg { opacity: .75; padding: 24px 6px; text-align: center; }
+  body.mobile .rkwrap { width: 940px; }
   .opt > span { font-size: 15px; opacity: .85; margin-right: 8px; }
   .seg { display: inline-flex; }
   .seg button { font-family: inherit; font-size: 16px; color: #fff; background: rgba(255,255,255,.08); border: 0; padding: 6px 16px; cursor: pointer; transform: skewX(-10deg); margin-right: 3px; }
@@ -284,6 +300,7 @@
   body.mobile .scr, body.mobile .overlay, body.mobile .steps, body.mobile .sndbtn { zoom: var(--uiz, 1); }
   body.mobile kbd { display: none; }
   body.mobile #scr-room .rleft { width: 470px; } body.mobile #scr-room .rright { width: 450px; }   /* vw encolhe com o zoom: larguras fixas */
+  body.mobile .cupgrid { width: 1080px; } body.mobile .mpwrap { width: 1060px; } body.mobile .modal .panel { width: 560px; } body.mobile .carinfo { max-width: none; }
   body.mobile canvas#game { touch-action: none; }
   body.mobile .help { max-height: 92%; overflow-y: auto; width: 1100px; max-width: 96%; }
   body.mobile .help table:not(.hitems) { display: none; }   /* teclas não se aplicam no celular */
@@ -375,7 +392,7 @@
 <section class="scr" id="scr-title">
   <img class="logoimg" alt="Kart Rush">
   <div class="press pop" id="pressStart">PRESSIONE ENTER</div>
-  <div id="ver">v1.0</div>
+  <div id="ver">v1.1</div>
 </section>
 
 <section class="scr shade-left" id="scr-main">
@@ -386,6 +403,7 @@
     <button class="mi" data-act="tt"><b>CONTRA O RELÓGIO</b><small>Sozinho contra o seu fantasma · medalhas</small></button>
     <button class="mi" data-act="mp"><b>MULTIJOGADOR</b><small>Salas online com até 8 karts</small></button>
     <button class="mi" data-act="random"><b>CORRIDA ALEATÓRIA</b><small>Sorteia o carro e a pista</small></button>
+    <button class="mi" data-act="rank"><b>RANKING</b><small>Melhores voltas de cada pista</small></button>
     <button class="mi" data-act="help"><b>COMO JOGAR</b><small>Controles e dicas</small></button>
   </nav>
 </section>
@@ -425,6 +443,7 @@
   <div class="cfgwrap panel">
     <div class="cfgtrack"><canvas id="cMap" width="420" height="220"></canvas><div><div class="tname pop" id="cfgName"></div><div class="tsub" id="cfgSub"></div></div></div>
       <div class="opts cfgopts">
+        <div class="opt"><span>NOME</span><div class="seg" id="optPname"><button data-v="0">SEU NOME</button><button data-v="1" class="pdrv">PILOTO</button></div><input class="inp pnameIn" id="optPnameIn" maxlength="16" placeholder="Digite seu nome"></div>
         <div class="opt"><span>VOLTAS</span><div class="seg" id="optLaps"><button data-v="1">1</button><button data-v="3">3</button><button data-v="5">5</button></div></div>
         <div class="opt" id="optItemsRow"><span>ITENS</span><div class="seg" id="optItems"><button data-v="0">CORRIDA LIMPA</button><button data-v="1">COM ITENS</button></div></div>
         <div class="opt"><span>DIFICULDADE</span><div class="seg" id="optDiff"><button data-v="0">FÁCIL</button><button data-v="1">NORMAL</button><button data-v="2">DIFÍCIL</button></div></div>
@@ -441,6 +460,7 @@
   <div class="cupopts">
     <div class="opt"><span>VOLTAS</span><div class="seg" id="cupLaps"><button data-v="1">1</button><button data-v="3">3</button><button data-v="5">5</button></div></div>
     <div class="opt"><span>DIFICULDADE</span><div class="seg" id="cupDiff"><button data-v="0">FÁCIL</button><button data-v="1">NORMAL</button><button data-v="2">DIFÍCIL</button></div></div>
+    <div class="opt"><span>NOME</span><div class="seg" id="cupPname"><button data-v="0">SEU NOME</button><button data-v="1" class="pdrv">PILOTO</button></div><input class="inp pnameIn" id="cupPnameIn" maxlength="16" placeholder="Digite seu nome"></div>
     <div class="opt"><span>ITENS</span><div class="seg" id="cupItems"><button data-v="0">CORRIDA LIMPA</button><button data-v="1">COM ITENS</button></div></div>
   </div>
   <div class="foot"><button class="btn ghost" data-back>‹ CARRO<kbd>Esc</kbd></button><button class="btn" id="cupOk">COMEÇAR!<kbd>Enter</kbd></button></div>
@@ -515,6 +535,19 @@
   <div class="foot"><button class="btn ghost" id="rLeave">SAIR DA SALA</button><button class="btn ghost" id="rReady">ESTOU PRONTO</button><button class="btn" id="rStart">INICIAR CORRIDA</button></div>
 </section>
 
+<section class="scr shade-full" id="scr-rank">
+  <div class="hdr"><h2 class="pop">RANKING ONLINE</h2></div>
+  <div class="rkwrap panel">
+    <div class="rkfilters">
+      <div class="opt"><span>PISTA</span><select class="inp" id="rkTrack"></select></div>
+      <div class="opt"><span>MODO</span><div class="seg" id="rkMode"><button data-v="0">GERAL</button><button data-v="1">SOLO</button><button data-v="2">MULTIJOGADOR</button></div></div>
+      <div class="opt"><span>ITENS</span><div class="seg" id="rkItems"><button data-v="0">TODOS</button><button data-v="1">SEM ITENS</button><button data-v="2">COM ITENS</button></div></div>
+    </div>
+    <div class="rkbody" id="rkBody"></div>
+  </div>
+  <div class="foot"><button class="btn ghost" data-back>‹ VOLTAR<kbd>Esc</kbd></button><button class="btn ghost" id="rkRefresh">ATUALIZAR</button></div>
+</section>
+
 <section class="scr shade-full" id="scr-help">
   <div class="help panel">
     <h3>COMO JOGAR</h3>
@@ -552,7 +585,7 @@
     </table>
     <p>Quem está atrás ganha mais turbo, motor e pneus; quem está na frente, mais óleo e escudo. A barra no topo mostra quanto falta de motor e pneus.<br>
     <b>Obstáculos</b> (só com itens, sempre num lado da pista — o outro fica livre): cones, barris, cavaletes e placas voam quando atingidos e o kart perde um pouco; tire wall faz bater e voltar; barreira de concreto não deixa passar; poças de óleo fazem rodar.<br>
-    <b>Ranking online:</b> só voltas de corridas sem itens contam.</p>
+    <b>Ranking online:</b> toda volta completada por você entra sozinha no ranking da pista (bots não entram). No solo, escolha em NOME se aparece com o seu nome ou com o nome do piloto do carro; no multijogador vale o nome da sala. O menu RANKING mostra os 10 melhores de cada pista, com filtros por modo (solo / multijogador) e itens.</p>
     </div>
     </div>
     <p style="font-family:system-ui,sans-serif;font-size:10px;opacity:.55;margin:4px 0">Créditos 3D: kart "Modular Go-kart" por Jungle Jim (sketchfab.com/jungle_jim, CC BY 4.0) · pilotos criados pelo Fábio (Tripo) · árvores, pedras, cones, barreiras e tire wall enviados pelo Fábio · arbustos e flores Stylized Nature MegaKit por Quaternius (CC0) · texturas de pista e pneus a partir de modelos de sketchfab.com/HY2245 · cactos e rochas do deserto: "racing heroes - dust bowl" por amogusstrikesback2 (CC BY 4.0) · sons Kenney (CC0).</p>
@@ -644,7 +677,7 @@ const TEX_LIST = ["drv_f_albedo", "drv_f_mask", "drv_f_normal", "drv_m_albedo", 
 </script>
 <script>
 /* =========================================================
-   KART RUSH — v1.0
+   KART RUSH — v1.1
    Workflow de games · HTML/JS + Three.js (r128), arquivo único
    - 24 pistas da F1 (traçado real) + Kart Point; corrida, campeonato, contra o relógio, multijogador
    - corrida limpa ou com itens (caixas, obstáculos, óleo, escudo, turbo, motor, pneus); ranking online
@@ -2755,7 +2788,7 @@ function renderCups() {
     return `<div class="cup panel ${i === selCup ? 'on' : ''}" data-i="${i}">${tr}<h4 class="pop">${c.name}</h4><ol>${list}</ol></div>`;
   }).join('');
   $('cupgrid').querySelectorAll('.cup').forEach(el => { el.onclick = () => { selCup = +el.dataset.i; renderCups(); }; el.ondblclick = () => startCup(); });
-  segSel('cupLaps', CONFIG.LAPS); segSel('cupDiff', difficulty); segSel('cupItems', itemsPref ? 1 : 0);
+  segSel('cupLaps', CONFIG.LAPS); segSel('cupDiff', difficulty); segSel('cupItems', itemsPref ? 1 : 0); renderPname();
 }
 document.querySelectorAll('#cupLaps button').forEach(b => b.onclick = () => { CONFIG.LAPS = +b.dataset.v; segSel('cupLaps', CONFIG.LAPS); });
 document.querySelectorAll('#cupDiff button').forEach(b => b.onclick = () => { difficulty = +b.dataset.v; segSel('cupDiff', difficulty); });
@@ -2931,7 +2964,7 @@ function garageCamera(dt) {
    TELAS DO MENU
    ========================================================= */
 const RANDOM = 'random';
-const MENU_STATES = ['title', 'main', 'car', 'track', 'config', 'help', 'roulette', 'loading', 'cup', 'mp', 'room'];
+const MENU_STATES = ['title', 'main', 'car', 'track', 'config', 'help', 'rank', 'roulette', 'loading', 'cup', 'mp', 'room'];
 let garageLivery = 'padrao';
 let state = 'title', selCar = 1, selTrackIdx = 1, mainIdx = 0, pauseIdx = 0;
 const TRACK_LIST = [RANDOM, ...TRACKS.map(d => d.id)];
@@ -2952,12 +2985,13 @@ function goScreen(name) {
   if (name === 'track') { renderTrackList(); selectTrackIdx(selTrackIdx, true); }
   if (name === 'config') renderConfig();
   if (name === 'cup') renderCups();
+  if (name === 'rank') renderRankScreen();
   if (name === 'main') { $('podium').style.display = 'none'; }
   if (typeof onScreen === 'function') onScreen(name);
 }
 document.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
 function back() {
-  if (state === 'car' || state === 'help') goScreen('main');
+  if (state === 'car' || state === 'help' || state === 'rank') goScreen('main');
   else if (state === 'track' || state === 'cup') goScreen('car');
   else if (state === 'config') goScreen('track');
   else if (state === 'main') goScreen('title');
@@ -2974,6 +3008,7 @@ function activateMain(i) {
   if (act === 'race' || act === 'cup' || act === 'tt') { mode = act; goScreen('car'); }
   else if (act === 'mp') { mode = 'mp'; goScreen('mp'); askName(); }
   else if (act === 'help') goScreen('help');
+  else if (act === 'rank') goScreen('rank');
   else { mode = 'race'; roulette(RANDOM, RANDOM); }
 }
 
@@ -3068,6 +3103,7 @@ function renderConfig() {
   drawRoomMap(d ? d.id : 'random', 'cMap');
   $('optDiff').parentNode.style.display = mode === 'tt' ? 'none' : ''; $('optItemsRow').style.display = mode === 'tt' ? 'none' : '';
   $('cfgOk').firstChild.textContent = mode === 'tt' ? 'CRONOMETRAR!' : 'CORRER!';
+  renderPname();
   segSel('optLaps', CONFIG.LAPS); segSel('optDiff', difficulty); segSel('optGfx', quality); segSel('optItems', itemsPref ? 1 : 0); segSel('optCam', camFP ? 1 : 0);
 }
 const fact = (l, v) => `<div class="fact"><small>${l}</small><b>${v}</b></div>`;
@@ -3244,7 +3280,7 @@ $('roomBtn').onclick = () => netBackToRoom();
 let cdTime = 0, goAt = 3.6, raceTime = 0, resultsTimer = 0, goTimer = 0;
 function startCountdown() {
   SMOKE.clear(); SKIDS.clear();
-  raceItems = mode === 'mp' ? !!(Net.race && Net.race.items) : (mode !== 'tt' && itemsPref); rankSent = false; $('resRank').innerHTML = '';
+  raceItems = mode === 'mp' ? !!(Net.race && Net.race.items) : (mode !== 'tt' && itemsPref); rankSent = false; rankRaceBest = Infinity; rankLast = null; rankPending = 0; $('resRank').innerHTML = '';
   ITEMS.start();
   if (state !== 'intro' && state !== 'loading' && state !== 'done' && state !== 'paused' && state !== 'race' && state !== 'countdown') return;
   document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
@@ -3610,61 +3646,128 @@ const ITEMS = (() => {
 })();
 
 /* =========================================================
-   RANKING ONLINE por pista (servidor do multijogador): melhor volta de cada jogador, só corridas sem itens
+   RANKING ONLINE por pista (servidor do multijogador)
+   - toda volta completada pelo jogador é enviada na hora (bots nunca); o servidor guarda a melhor de cada jogador
+     separada por modo (solo / multijogador) e itens (com / sem)
+   - solo: nome escolhido em NOME (seu nome ou o piloto do carro); multijogador: nome da sala
    ========================================================= */
 const RANK = (() => {
-  let ws = null, pending = null, waiters = [], offlineUntil = 0;
+  let ws = null, pending = null, waiters = new Map(), rid = 0, offlineUntil = 0;
   const url = () => (Net.ok && Net.url) || netDefaultUrl();
+  function onMsg(m) { const w = waiters.get(m.rid); if (w) { waiters.delete(m.rid); w(m); } }
   function conn() {
+    if (Net.ok && Net.ws && Net.ws.readyState === 1) return Promise.resolve(Net.ws);   // já conectado ao multijogador: usa a mesma conexão
     if (ws && ws.readyState === 1) return Promise.resolve(ws);
     if (Date.now() < offlineUntil) return Promise.reject(new Error('offline'));
     if (pending) return pending;
     pending = new Promise((res, rej) => {
-      let s; try { s = new WebSocket(url()); } catch (e) { pending = null; offlineUntil = Date.now() + 20000; return rej(e); }
-      const to = setTimeout(() => { try { s.close(); } catch (e) { } pending = null; offlineUntil = Date.now() + 20000; rej(new Error('timeout')); }, 4000);
+      let s; try { s = new WebSocket(url()); } catch (e) { pending = null; offlineUntil = Date.now() + 15000; return rej(e); }
+      const to = setTimeout(() => { try { s.close(); } catch (e) { } pending = null; offlineUntil = Date.now() + 15000; rej(new Error('timeout')); }, 6000);
       s.onopen = () => { clearTimeout(to); ws = s; pending = null; res(s); };
-      s.onerror = () => { clearTimeout(to); pending = null; offlineUntil = Date.now() + 20000; rej(new Error('erro')); };
+      s.onerror = () => { clearTimeout(to); pending = null; offlineUntil = Date.now() + 15000; rej(new Error('erro')); };
       s.onclose = () => { ws = null; };
-      s.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
-        if (m.type !== 'rank') return; const w = waiters.filter(x => x.track === m.track); waiters = waiters.filter(x => x.track !== m.track); w.forEach(x => x.res(m)); };
+      s.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } if (m.type === 'rank') onMsg(m); };
     });
     return pending;
   }
-  const req = (type, data) => conn().then(s => new Promise((res, rej) => { waiters.push({ track: data.track, res }); s.send(JSON.stringify({ type, ...data })); setTimeout(() => rej(new Error('timeout')), 5000); }));
+  function req(type, data) {
+    const id = ++rid, msg = JSON.stringify({ type, rid: id, cid: netCid(), ...data });
+    const p = new Promise((res, rej) => { waiters.set(id, res); setTimeout(() => { if (waiters.delete(id)) rej(new Error('timeout')); }, 8000); });
+    // conexão já aberta: envia agora mesmo (no multijogador a volta precisa chegar antes do aviso de chegada)
+    if (Net.ok && Net.ws && Net.ws.readyState === 1) { Net.ws.send(msg); return p; }
+    return conn().then(s => { s.send(msg); return p; }, e => { waiters.delete(id); throw e; });
+  }
   return {
-    get: track => req('rankGet', { track, cid: netCid() }),
-    put: (track, time, car) => req('rankPut', { track, time, car, name: store.get('mpName'), cid: netCid() }),
+    onMsg,
+    get: (track, f = {}) => req('rankGet', { track, ...f }),            // track: id da pista (top 10) ou 'all' (recorde de cada pista)
+    put: (track, time, car, name, items) => req('rankPut', { track, time, car, name, items }),
   };
 })();
-function rankListHtml(m, title) {
-  if (!m.list.length) return `<h4>${title}</h4><div style="opacity:.75">Ninguém no ranking desta pista ainda. Seja o primeiro!</div>`;
-  const me = store.get('mpName');
-  return `<h4>${title}</h4><ol>${m.list.slice(0, 10).map(e => `<li class="${me && e.name === me ? 'me' : ''}">${esc(e.name)}<span class="t">${fmt(e.time)}</span></li>`).join('')}</ol>` +
-    (m.pos && m.pos > 10 ? `<div style="margin-top:4px;color:#ffd400">Você: ${m.pos}º de ${m.total} · ${fmt(m.mine)}</div>` : '');
+const RANK_MODE = ['all', 'solo', 'mp'], RANK_ITEMS = ['all', 'without', 'with'];
+const rankTags = e => `<span class="rktag">${e.mode === 'mp' ? 'MULTIJOGADOR' : 'SOLO'}</span><span class="rktag">${e.items ? 'COM ITENS' : 'SEM ITENS'}</span>`;
+// nome usado no ranking
+let rankAs = store.get('rankAs') === 1 ? 1 : store.get('rankAs') === 0 ? 0 : (store.get('mpName') ? 0 : 1);   // 0 = seu nome, 1 = piloto do carro
+function rankName(k) {
+  if (mode === 'mp') return store.get('mpName') || mpName() || k.car.name;
+  return rankAs === 0 && store.get('mpName') ? store.get('mpName') : k.car.name;
 }
+function renderPname() {
+  const drv = selCar === RANDOM ? 'PILOTO DO CARRO' : 'PILOTO: ' + CARS[selCar].name.toUpperCase();
+  for (const pre of ['opt', 'cup']) {
+    const seg = $(pre + 'Pname'); if (!seg) continue;
+    seg.querySelector('.pdrv').textContent = drv; segSel(pre + 'Pname', rankAs);
+    const inp = $(pre + 'PnameIn'); inp.style.display = rankAs === 0 ? '' : 'none';
+    if (document.activeElement !== inp) inp.value = store.get('mpName') || '';
+  }
+}
+for (const pre of ['opt', 'cup']) {
+  document.querySelectorAll(`#${pre}Pname button`).forEach(b => b.onclick = () => {
+    rankAs = +b.dataset.v; store.set('rankAs', rankAs); renderPname();
+    if (rankAs === 0 && !store.get('mpName')) setTimeout(() => $(pre + 'PnameIn').focus(), 30);
+  });
+  $(pre + 'PnameIn').oninput = e => { const n = e.target.value.trim().slice(0, 16); if (n) { store.set('mpName', n); $('mpName').value = n; } };
+  $(pre + 'PnameIn').onchange = () => renderPname();
+}
+// envio das voltas
+let rankSent = false, rankRaceBest = Infinity, rankLast = null, rankPending = 0;
+function rankLap(k, lt) {
+  if (!T.def || !(lt < rankRaceBest)) return;
+  rankRaceBest = lt; rankPending++;
+  const id = T.def.id, name = rankName(k);
+  RANK.put(id, lt, k.carIdx, name, !!raceItems).then(m => { rankLast = m; }).catch(() => { rankLast = rankLast || { offline: true }; })
+    .finally(() => { rankPending--; if (rankSent) rankShow(); });
+}
+function rankShow() {
+  const el = $('resRank'); if (!el || !player) return;
+  if (!player.lapTimes.length) { el.innerHTML = ''; return; }
+  const m = rankLast;
+  if (rankPending && (!m || m.offline)) { el.innerHTML = '<span style="opacity:.75">Enviando para o ranking online…</span>'; return; }
+  if (!m || m.offline) { el.innerHTML = '<span style="opacity:.75">Ranking online indisponível (sem conexão com o servidor).</span>'; return; }
+  el.innerHTML = `RANKING ONLINE · ${esc(T.def.name)} · como <b>${esc(m.name)}</b>: ${m.improved ? 'nova melhor volta sua! ' : ''}` +
+    `${m.pos ? `<b style="color:#ffd400">${m.pos}º</b> de ${m.total} (${fmt(m.mine)})` : ''}`;
+}
+function rankSubmit() {   // chamado ao abrir o resultado: as voltas já foram enviadas durante a corrida
+  if (rankSent || !player) return; rankSent = true; rankShow();
+}
+// escolha da pista: só o recorde daquela pista
 function showTrackRank(id) {
   const el = $('tRank'); if (!el) return;
-  if (!id || id === RANDOM) { el.innerHTML = '<h4>RANKING ONLINE</h4><div style="opacity:.75">Escolha uma pista para ver as melhores voltas.</div>'; return; }
-  el.innerHTML = '<h4>RANKING ONLINE</h4><div style="opacity:.75">carregando…</div>'; el.dataset.id = id;
-  RANK.get(id).then(m => { if (el.dataset.id === id) el.innerHTML = rankListHtml(m, 'RANKING ONLINE · MELHOR VOLTA'); })
-    .catch(() => { if (el.dataset.id === id) el.innerHTML = '<h4>RANKING ONLINE</h4><div style="opacity:.75">Sem conexão com o servidor do Kart Rush (abra o jogo pelo endereço do servidor para participar).</div>'; });
+  if (!id || id === RANDOM) { el.innerHTML = '<h4>RECORDE ONLINE</h4><div style="opacity:.75">Escolha uma pista para ver o recorde.</div>'; return; }
+  el.innerHTML = '<h4>RECORDE ONLINE</h4><div style="opacity:.75">carregando…</div>'; el.dataset.id = id;
+  RANK.get(id, { n: 1 }).then(m => {
+    if (el.dataset.id !== id) return;
+    const e = m.list[0];
+    el.innerHTML = '<h4>RECORDE ONLINE</h4>' + (e ? `<div><b style="font-size:16px">${fmt(e.time)}</b> · ${esc(e.name)} ${rankTags(e)}</div>` : '<div style="opacity:.75">Ninguém no ranking desta pista ainda. Seja o primeiro!</div>');
+  }).catch(() => { if (el.dataset.id === id) el.innerHTML = '<h4>RECORDE ONLINE</h4><div style="opacity:.75">Sem conexão com o servidor do Kart Rush (abra o jogo pelo endereço do servidor).</div>'; });
 }
-let rankSent = false;
-function rankSubmit() {
-  if (rankSent || !player) return; rankSent = true;
-  const el = $('resRank'), best = player.lapTimes.length ? Math.min(...player.lapTimes) : null, id = T.def.id;
-  if (!best) { el.innerHTML = ''; return; }
-  if (raceItems) { el.innerHTML = '<span style="opacity:.75">Ranking online: só valem corridas sem itens.</span>'; return; }
-  const send = () => {
-    el.innerHTML = '<span style="opacity:.75">Enviando para o ranking online…</span>';
-    RANK.put(id, best, player.carIdx).then(m => {
-      el.innerHTML = `RANKING ONLINE · ${esc(T.def.name)}: ${m.improved ? 'nova melhor volta sua! ' : ''}você está em <b style="color:#ffd400">${m.pos}º</b> de ${m.total} (${fmt(m.mine)})`;
-    }).catch(() => { el.innerHTML = '<span style="opacity:.75">Ranking online indisponível (sem conexão com o servidor).</span>'; });
-  };
-  if (store.get('mpName')) send();
-  else { el.innerHTML = '<span style="opacity:.8">Quer aparecer no ranking online desta pista?</span><button class="btn sm" id="rankNameBtn">ENTRAR NO RANKING</button>';
-    $('rankNameBtn').onclick = () => askName(() => send()); }
+// tela RANKING
+const rkF = { track: 'all', mode: 0, items: 0 };
+function renderRankScreen() {
+  const sel = $('rkTrack');
+  if (!sel.options.length) sel.innerHTML = `<option value="all">Todas as pistas (recorde de cada)</option>` + TRACKS.map(t => `<option value="${t.id}">${t.name} (${t.cc})</option>`).join('');
+  sel.value = rkF.track; segSel('rkMode', rkF.mode); segSel('rkItems', rkF.items);
+  const body = $('rkBody'), key = JSON.stringify(rkF); body.dataset.k = key;
+  if (!body.innerHTML) body.innerHTML = '<div class="rkmsg">carregando…</div>';
+  RANK.get(rkF.track, { mode: RANK_MODE[rkF.mode], items: RANK_ITEMS[rkF.items] }).then(m => {
+    if (body.dataset.k !== key) return;
+    if (rkF.track === 'all') {
+      const rows = TRACKS.map(t => ({ t, e: m.all[t.id] }));
+      body.innerHTML = `<table class="rktable"><tr><th>PISTA</th><th>RECORDE</th><th>PILOTO</th><th></th><th>JOGADORES</th></tr>` + rows.map(({ t, e }) =>
+        `<tr class="trk ${e && e.me ? 'me' : ''}" data-id="${t.id}"><td>${t.name}</td><td class="t">${e ? fmt(e.time) : '—'}</td><td>${e ? esc(e.name) : '<span style="opacity:.5">sem tempos</span>'}</td><td>${e ? rankTags(e) : ''}</td><td>${e ? e.total : 0}</td></tr>`).join('') + '</table>';
+      body.querySelectorAll('tr.trk').forEach(tr => tr.onclick = () => { rkF.track = tr.dataset.id; renderRankScreen(); });
+    } else {
+      const d = TRACKS.find(t => t.id === rkF.track);
+      body.innerHTML = !m.list.length ? `<div class="rkmsg">Nenhum tempo em ${esc(d.name)} com esse filtro ainda. Seja o primeiro!</div>` :
+        `<table class="rktable"><tr><th>#</th><th>PILOTO</th><th>MELHOR VOLTA</th><th></th><th>KART</th><th>DATA</th></tr>` + m.list.map((e, i) =>
+          `<tr class="${e.me ? 'me' : ''}"><td class="pos">${i + 1}º</td><td>${esc(e.name)}</td><td class="t">${fmt(e.time)}</td><td>${rankTags(e)}</td><td>${(CARS[e.car] || CARS[0]).name}</td><td>${e.date ? new Date(e.date).toLocaleDateString('pt-BR') : ''}</td></tr>`).join('') + '</table>' +
+          (m.pos && m.pos > 10 ? `<div class="rkmsg" style="padding:10px;color:#ffd400">Você: ${m.pos}º de ${m.total} · ${fmt(m.mine)}</div>` : `<div class="rkmsg" style="padding:10px">${m.total} jogador${m.total > 1 ? 'es' : ''} nesta pista com esse filtro</div>`);
+    }
+  }).catch(() => { if (body.dataset.k === key) body.innerHTML = '<div class="rkmsg">Sem conexão com o servidor do Kart Rush.<br>O ranking funciona quando o jogo é aberto pelo endereço do servidor.</div>'; });
 }
+$('rkTrack').onchange = () => { rkF.track = $('rkTrack').value; renderRankScreen(); };
+document.querySelectorAll('#rkMode button').forEach(b => b.onclick = () => { rkF.mode = +b.dataset.v; renderRankScreen(); });
+document.querySelectorAll('#rkItems button').forEach(b => b.onclick = () => { rkF.items = +b.dataset.v; renderRankScreen(); });
+$('rkRefresh').onclick = () => renderRankScreen();
 
 /* =========================================================
    MULTIJOGADOR (cliente)
@@ -3716,6 +3819,7 @@ function netOn(m) {
       break;
     }
     case 'rooms': Net.rooms = m.list; if (state === 'mp') renderRooms(); break;
+    case 'rank': RANK.onMsg(m); break;
     case 'joined': Net.room = m.room; Net.ready = false; $('mpModal').classList.remove('on'); $('pwModal').classList.remove('on'); goScreen('room'); break;
     case 'room': {
       const wasAdmin = Net.room && Net.room.admin === Net.id;
@@ -4050,7 +4154,7 @@ function onScreen(name) {
 }
 
 /*__NET_END__*/
-function onLap(k, lt) { if (mode === 'tt' && k.isPlayer) ttLap(k, lt); }
+function onLap(k, lt) { if (mode === 'tt' && k.isPlayer) ttLap(k, lt); if (k.isPlayer && !k.ghost) rankLap(k, lt); }
 function onFinish(k) { if (mode === 'mp') netFinish(k); }
 function netCountdownTime(t) { return mode === 'mp' ? netCdTime(t) : t; }
 function netRaceTime(t) { return mode === 'mp' ? netRaceT(t) : t; }
@@ -4107,6 +4211,7 @@ addEventListener('keydown', e => {
       if (enter) confirmTrack(); if (esc) back(); break;
     case 'config': if (enter) { Sound.ui.ok(); startRaceFromConfig(); } if (esc) back(); break;
     case 'help': if (enter || esc) back(); break;
+    case 'rank': if (esc) back(); break;
     case 'mp': if ($('nameModal').classList.contains('on')) { if (e.code === 'Enter') confirmName(); else if (e.code === 'Escape') $('nameCancel').onclick(); break; }
       if (e.code === 'Escape') { if ($('mpModal').classList.contains('on')) $('mpModal').classList.remove('on'); else if ($('pwModal').classList.contains('on')) $('pwModal').classList.remove('on'); else back(); } break;
     case 'room':

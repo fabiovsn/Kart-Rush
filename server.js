@@ -1,10 +1,11 @@
-// Kart Rush v1.0 — servidor multijogador
+// Kart Rush v1.1 — servidor multijogador
 //  - serve o jogo (public/index.html) e o WebSocket em /ws
 //  - salas: lista, criar, entrar (com senha opcional), sair, admin expulsa / configura / inicia
 //  - corrida: grid com humanos + bots (completa até 8), largada sincronizada pelo relógio do servidor,
 //    retransmissão do estado de cada kart (~20x/s), bandeirada, resultado final e volta para a sala
 //  - itens (opção da sala): retransmite os efeitos (óleo na pista, escudo) para todos da corrida
-//  - ranking online por pista: melhor volta de cada jogador (corridas sem itens), salvo em data/ranking.json
+//  - ranking online por pista: melhor volta de cada jogador, separada por modo (solo / multijogador) e itens (com / sem);
+//    guardado no Upstash Redis (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN) ou, sem ele, em data/ranking.json
 const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
 
@@ -14,37 +15,89 @@ const MAX_KARTS = 8, MAX_ROOMS = 60, CARS = 8;
 const CAR_NAMES = ['Relâmpago', 'Faísca', 'Abelha', 'Ametista', 'Tornado', 'Akpetinha', 'Foguete', 'Cometa'];
 const DIFF = [[0.8, 0.86], [0.88, 0.95], [0.96, 1.01]];
 const LAPS = [1, 3, 5];
-// ---------- ranking online (melhor volta por pista, um registro por jogador) ----------
-const DATA = process.env.DATA_DIR || path.join(__dirname, 'data'), RANK_FILE = path.join(DATA, 'ranking.json');   // DATA_DIR: disco persistente (Render)
-let RANK = {};
-try { RANK = JSON.parse(fs.readFileSync(RANK_FILE, 'utf8')) || {}; } catch (e) { RANK = {}; }
-let rankSaveT = null;
-function rankSave() {
-  clearTimeout(rankSaveT);
-  rankSaveT = setTimeout(() => { try { fs.mkdirSync(DATA, { recursive: true }); fs.writeFileSync(RANK_FILE, JSON.stringify(RANK)); } catch (e) { console.error('ranking:', e.message); } }, 1500);
-}
+// ---------- ranking online ----------
+// RANK[pista] = [{ cid, name, time, car, mode: 'solo'|'mp', items: bool, date }] — um registro por jogador+nome+modo+itens (o melhor)
+const DATA = process.env.DATA_DIR || path.join(__dirname, 'data'), RANK_FILE = path.join(DATA, 'ranking.json');   // DATA_DIR: disco persistente
+const UP_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, ''), UP_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+const UP_KEY = 'kartrush:rank:';
+let RANK = {}, rankDirty = new Set(), rankSaveT = null;
 const validTrack = t => typeof t === 'string' && /^[a-z0-9-]{2,20}$/.test(t);
-function rankView(track, cid) {
-  const all = (RANK[track] || []).slice().sort((a, b) => a.time - b.time);
-  const i = cid ? all.findIndex(e => e.cid === cid) : -1;
-  return { track, list: all.slice(0, 10).map(e => ({ name: e.name, time: e.time, car: e.car, date: e.date })), total: all.length, pos: i >= 0 ? i + 1 : null, mine: i >= 0 ? all[i].time : null };
+const upstash = cmd => fetch(UP_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + UP_TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(cmd) })
+  .then(r => r.json()).then(j => { if (j.error) throw new Error(j.error); return j.result; });
+function rankNormalize(obj) {   // aceita o formato antigo (v1.0: só solo sem itens)
+  const out = {};
+  for (const [t, list] of Object.entries(obj || {})) if (validTrack(t) && Array.isArray(list))
+    out[t] = list.filter(e => e && e.cid && e.time > 0).map(e => ({ cid: e.cid, name: e.name || 'Piloto', time: e.time, car: e.car | 0, mode: e.mode === 'mp' ? 'mp' : 'solo', items: !!e.items, date: e.date || 0 }));
+  return out;
 }
-function rankPut(track, cid, name, time, car) {
+async function rankLoad() {
+  if (UP_URL && UP_TOKEN) {
+    try {
+      const keys = await upstash(['KEYS', UP_KEY + '*']) || [];
+      if (keys.length) { const vals = await upstash(['MGET', ...keys]); keys.forEach((k, i) => { try { RANK[k.slice(UP_KEY.length)] = JSON.parse(vals[i]); } catch (e) { } }); }
+      RANK = rankNormalize(RANK); console.log(`ranking: Upstash (${keys.length} pistas)`); return;
+    } catch (e) { console.error('ranking: Upstash indisponível, usando arquivo —', e.message); }
+  }
+  try { RANK = rankNormalize(JSON.parse(fs.readFileSync(RANK_FILE, 'utf8'))); } catch (e) { RANK = {}; }
+  console.log('ranking: arquivo ' + RANK_FILE + (UP_URL ? '' : ' (no Render gratuito ele some quando o servidor reinicia — configure o Upstash)'));
+}
+function rankSave(track) {
+  rankDirty.add(track); clearTimeout(rankSaveT);
+  rankSaveT = setTimeout(() => {
+    const dirty = [...rankDirty]; rankDirty.clear();
+    if (UP_URL && UP_TOKEN) {
+      const cmd = ['MSET']; for (const t of dirty) cmd.push(UP_KEY + t, JSON.stringify(RANK[t] || []));
+      upstash(cmd).catch(e => { console.error('ranking (Upstash):', e.message); dirty.forEach(t => rankDirty.add(t)); });
+    }
+    try { fs.mkdirSync(DATA, { recursive: true }); fs.writeFileSync(RANK_FILE, JSON.stringify(RANK)); } catch (e) { console.error('ranking:', e.message); }
+  }, 1500);
+}
+// filtro: mode 'all'|'solo'|'mp', items 'all'|'with'|'without'; melhor tempo de cada jogador (cid+nome) entre os registros que passam
+function rankFiltered(track, f) {
+  const best = new Map();
+  for (const e of RANK[track] || []) {
+    if (f.mode !== 'all' && e.mode !== f.mode) continue;
+    if (f.items === 'with' && !e.items) continue;
+    if (f.items === 'without' && e.items) continue;
+    const k = e.cid + '|' + e.name, o = best.get(k);
+    if (!o || e.time < o.time) best.set(k, e);
+  }
+  return [...best.values()].sort((a, b) => a.time - b.time || a.date - b.date);
+}
+const rankOut = (e, cid) => ({ name: e.name, time: e.time, car: e.car, mode: e.mode, items: e.items, date: e.date, me: !!cid && e.cid === cid });
+function rankFilter(m) { return { mode: ['solo', 'mp'].includes(m.mode) ? m.mode : 'all', items: ['with', 'without'].includes(m.items) ? m.items : 'all' }; }
+function rankView(track, cid, f = { mode: 'all', items: 'all' }, n = 10) {
+  const all = rankFiltered(track, f), i = cid ? all.findIndex(e => e.cid === cid) : -1;
+  return { track, list: all.slice(0, n).map(e => rankOut(e, cid)), total: all.length, pos: i >= 0 ? i + 1 : null, mine: i >= 0 ? all[i].time : null };
+}
+function rankAll(cid, f) {   // recorde de cada pista (com o filtro)
+  const out = {};
+  for (const t of Object.keys(RANK)) { const all = rankFiltered(t, f); if (all.length) out[t] = { ...rankOut(all[0], cid), total: all.length }; }
+  return out;
+}
+function rankPut(track, cid, name, time, car, mode, items) {
   if (!validTrack(track) || !cid || !(time >= 20 && time <= 900)) return false;
   const list = RANK[track] || (RANK[track] = []);
-  const e = list.find(x => x.cid === cid);
+  const e = list.find(x => x.cid === cid && x.name === name && x.mode === mode && x.items === items);
   let improved = false;
-  if (!e) { list.push({ cid, name, time: +time.toFixed(3), car, date: Date.now() }); improved = true; }
-  else { e.name = name; if (time < e.time) { e.time = +time.toFixed(3); e.car = car; e.date = Date.now(); improved = true; } }
-  if (list.length > 500) { list.sort((a, b) => a.time - b.time); list.length = 500; }
-  rankSave(); return improved;
+  if (!e) { list.push({ cid, name, time: +time.toFixed(3), car, mode, items, date: Date.now() }); improved = true; }
+  else if (time < e.time) { e.time = +time.toFixed(3); e.car = car; e.date = Date.now(); improved = true; }
+  if (!improved) return false;
+  // limite por pista: os 80 melhores de cada combinação modo+itens
+  if (list.length > 320) {
+    const keep = new Set();
+    for (const md of ['solo', 'mp']) for (const it of [false, true]) list.filter(x => x.mode === md && x.items === it).sort((a, b) => a.time - b.time).slice(0, 80).forEach(x => keep.add(x));
+    RANK[track] = list.filter(x => keep.has(x));
+  }
+  rankSave(track); return true;
 }
 
 const server = http.createServer((req, res) => {
   let url = decodeURIComponent(req.url.split('?')[0]);
-  if (url.startsWith('/api/ranking/')) {   // também por HTTP: /api/ranking/<pista>
-    const t = url.slice(13); res.writeHead(validTrack(t) ? 200 : 400, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
-    return res.end(JSON.stringify(validTrack(t) ? rankView(t) : { error: 'pista inválida' }));
+  if (url.startsWith('/api/ranking')) {   // também por HTTP: /api/ranking (recorde de cada pista) ou /api/ranking/<pista>?mode=solo|mp&items=with|without
+    const t = url.slice(13), q = Object.fromEntries(new URLSearchParams(req.url.split('?')[1] || '')), f = rankFilter(q), ok = !t || validTrack(t);
+    res.writeHead(ok ? 200 : 400, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+    return res.end(JSON.stringify(!ok ? { error: 'pista inválida' } : t ? rankView(t, null, f) : rankAll(null, f)));
   }
   if (url === '/health') { res.writeHead(200, { 'Content-Type': 'text/plain' }); return res.end('ok'); }
   if (url === '/') url = '/index.html';
@@ -172,6 +225,7 @@ function endRace(r) {
   res.sort((a, b) => (a.left - b.left) || ((a.time === null) - (b.time === null)) || (a.time !== null ? a.time - b.time : b.progress - a.progress));
   toRoom(r, 'raceEnd', { results: res, track: R.track, laps: R.laps });
   const win = res[0]; if (win) sys(r, `Vitória de ${win.name}!`);
+  r.lastRace = { track: R.track, items: R.items, until: now() + 90000 };   // a última volta pode chegar logo depois da bandeirada
   r.state = 'lobby'; r.race = null;
   broadcastRoom(r); broadcastRooms();
 }
@@ -253,11 +307,19 @@ function onMessage(c, m) {
     case 'fx':   // efeito de item (óleo na pista, escudo): repassa para os outros da corrida
       if (r && r.race && r.race.items && m.fx && typeof m.fx === 'object' && JSON.stringify(m.fx).length < 300) toRoom(r, 'fx', { from: c.id, fx: m.fx }, c);
       break;
-    case 'rankGet': if (validTrack(m.track)) send(c, 'rank', rankView(m.track, clean(m.cid, 40))); break;
-    case 'rankPut': {
+    case 'rankGet': {   // track: id da pista (top 10) ou 'all' (recorde de cada pista)
+      const cid = clean(m.cid, 40), f = rankFilter(m), rid = m.rid | 0;
+      if (m.track === 'all') send(c, 'rank', { rid, track: 'all', all: rankAll(cid, f) });
+      else if (validTrack(m.track)) send(c, 'rank', { rid, ...rankView(m.track, cid, f, Math.max(1, Math.min(10, m.n | 0 || 10))) });
+      break;
+    }
+    case 'rankPut': {   // volta completada pelo jogador (bots nunca enviam); no multijogador o servidor confere a corrida
       const cid = clean(m.cid, 40), name = clean(m.name, 16) || c.name || 'Piloto', car = Math.max(0, Math.min(CARS - 1, Math.floor(+m.car || 0)));
-      const improved = rankPut(m.track, cid, name, +m.time, car);
-      if (validTrack(m.track)) send(c, 'rank', { ...rankView(m.track, cid), improved, put: true });
+      let mode = 'solo', items = !!m.items;
+      const R = r && r.race && r.state === 'race' ? r.race : r && r.lastRace && r.lastRace.until > now() ? r.lastRace : null;
+      if (R) { if (R.track !== m.track) return; mode = 'mp'; items = !!R.items; }
+      const improved = rankPut(m.track, cid, name, +m.time, car, mode, items);
+      if (validTrack(m.track)) send(c, 'rank', { rid: m.rid | 0, ...rankView(m.track, cid, { mode: 'all', items: 'all' }), improved, put: true, mode, items, name });
       break;
     }
     case 'finish': {
@@ -286,4 +348,4 @@ wss.on('connection', ws => {
 setInterval(() => { for (const c of clients) { if (!c.alive) { c.ws.terminate(); continue; } c.alive = false; try { c.ws.ping(); } catch (e) { } } }, 15000);
 setInterval(() => { for (const r of rooms.values()) if (r.state === 'lobby') broadcastRoom(r); }, 4000);   // atualiza o ping na sala
 
-server.listen(PORT, () => console.log(`Kart Rush: http://localhost:${PORT}  (WebSocket em /ws)`));
+rankLoad().finally(() => server.listen(PORT, () => console.log(`Kart Rush: http://localhost:${PORT}  (WebSocket em /ws)`)));
