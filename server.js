@@ -15,7 +15,7 @@ const CAR_NAMES = ['Relâmpago', 'Faísca', 'Abelha', 'Ametista', 'Tornado', 'Ak
 const DIFF = [[0.8, 0.86], [0.88, 0.95], [0.96, 1.01]];
 const LAPS = [1, 3, 5];
 // ---------- ranking online (melhor volta por pista, um registro por jogador) ----------
-const DATA = path.join(__dirname, 'data'), RANK_FILE = path.join(DATA, 'ranking.json');
+const DATA = process.env.DATA_DIR || path.join(__dirname, 'data'), RANK_FILE = path.join(DATA, 'ranking.json');   // DATA_DIR: disco persistente (Render)
 let RANK = {};
 try { RANK = JSON.parse(fs.readFileSync(RANK_FILE, 'utf8')) || {}; } catch (e) { RANK = {}; }
 let rankSaveT = null;
@@ -52,8 +52,11 @@ const server = http.createServer((req, res) => {
   if (!file.startsWith(PUBLIC)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('não encontrado'); }
-    const type = file.endsWith('.html') ? 'text/html; charset=utf-8' : file.endsWith('.js') ? 'application/javascript' : 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': type }); res.end(data);
+    const ext = path.extname(file).toLowerCase();
+    const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.glb': 'model/gltf-binary', '.webp': 'image/webp', '.png': 'image/png', '.ogg': 'audio/ogg', '.json': 'application/json' };
+    // modelos, texturas e sons mudam só a cada versão: o navegador guarda por 1 dia (a página sempre é conferida)
+    res.writeHead(200, { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400' });
+    res.end(data);
   });
 });
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 64 * 1024 });

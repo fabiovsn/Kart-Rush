@@ -1,0 +1,19 @@
+# Kart Rush — deploy no Render (New > Blueprint, ou New > Web Service apontando para este repositório)
+services:
+  - type: web
+    name: kart-rush
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+    # Ranking online persistente (só em planos pagos, com disco):
+    # disk:
+    #   name: kart-rush-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    # e adicione em envVars:  - key: DATA_DIR  value: /var/data
