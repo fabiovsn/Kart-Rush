@@ -323,6 +323,7 @@
   #rotate svg { width: 90px; height: 90px; fill: #ffd400; animation: rotHint 1.6s ease-in-out infinite; }
   @keyframes rotHint { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
   /* celular em pé (ou com a rotação travada): a página gira 90° e o jogo continua deitado — nada fica travado */
+  body.mobile:not(.rot90) #touch { --s: min(30vh, 116px); }   /* deitado: mesmo tamanho dos botões do modo em pé */
   body.rot90 #touch { --s: min(calc(var(--rh, 100vw) * .26), 116px); }
   body.rot90 #scr-title .logoimg { width: min(700px, calc(var(--rw, 100vh) * .88)); } body.rot90 #scr-main .logoimg { width: min(400px, calc(var(--rw, 100vh) * .7)); } body.rot90 #loading .logoimg { width: min(420px, calc(var(--rw, 100vh) * .7)); }   /* girado: a altura útil é a largura da tela */
   body.rot90 { position: fixed; top: 0; left: 0; width: var(--rw, 100vh); height: var(--rh, 100vw); transform-origin: 0 0; transform: translateX(var(--rh, 100vw)) rotate(90deg); overflow: hidden; }   /* --rw/--rh: tamanho visível em px (JS) */
@@ -4124,12 +4125,13 @@ if (IS_MOBILE) {
     const sizeKey = want ? h + 'x' + w : '';
     if (want) { bs.setProperty('--rw', h + 'px'); bs.setProperty('--rh', w + 'px'); }
     if (want !== document.body.classList.contains('rot90') || sizeKey !== setRot.k) {
-      setRot.k = sizeKey; document.body.classList.toggle('rot90', want); scrollTo(0, 0); dispatchEvent(new Event('resize'));
+      setRot.k = sizeKey; document.body.classList.toggle('rot90', want); scrollTo(0, 0);
+      setTimeout(() => dispatchEvent(new Event('resize')), 0);   // depois que todos os ouvintes de resize (câmera, renderizador) existem
     }
   };
   setRot(); addEventListener('resize', setRot); addEventListener('orientationchange', () => setTimeout(setRot, 300));
   if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(setRot, 50));   // barras do Safari aparecem/somem
-  const fitUI = () => { document.body.style.setProperty('--uiz', Math.max(0.42, Math.min(1, VH() / 700, VW() / 1150)).toFixed(3)); rects = null; };
+  const fitUI = () => { document.body.style.setProperty('--uiz', Math.max(0.42, Math.min(1, VH() / (ROT90() ? 700 : 620), VW() / 1150)).toFixed(3)); rects = null; };
   fitUI(); addEventListener('resize', fitUI);
   addEventListener('orientationchange', () => { rects = null; });
   // mostra os botões só na largada/corrida (fora disso, solta tudo)
@@ -4163,6 +4165,13 @@ function eyePos() {   // posição dos olhos do piloto no kart (a partir do mode
     for (let i = 0; i < p.count; i += 7) if (p.getY(i) > top - 0.05) { sz += p.getZ(i); n++; } if (n) z = sz / n; }
   return (_eye = { y: top * KART_FIT.S - 0.78, z: z * KART_FIT.S - 0.1 });   // olhos abaixo do topo do capacete, um pouco atrás: o bico do kart aparece
 }
+// celular: com a tela mais larga que 1,7:1 (deitado) a câmera fecha um pouco para ver o mesmo que no modo em pé (~1,7:1);
+// os efeitos de velocidade continuam iguais (a variação do ângulo é preservada)
+const MOB_ASPECT = 1.7;
+function mobFov(fov) {
+  if (!IS_MOBILE || camera.aspect <= MOB_ASPECT) return fov;
+  return THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(fov) / 2) * MOB_ASPECT / camera.aspect));
+}
 function toggleCam() { camFP = !camFP; store.set('camFP', camFP); segSel('optCam', camFP ? 1 : 0); snapCamera = true; showToast(camFP ? 'CÂMERA: 1ª PESSOA' : 'CÂMERA: 3ª PESSOA', '#fff'); }
 function updateCamera(dt) {
   const k = player;
@@ -4178,7 +4187,7 @@ function updateCamera(dt) {
     camLook.set(k.pos.x + fx * (e.z + 14), k.y + e.y - 1.1, k.pos.z + fz * (e.z + 14)); camera.lookAt(camLook);
     camera.rotateZ(-k.steerS * Math.min(1, Math.abs(k.vf) / 30) * 0.035);   // inclina de leve na curva
     const fov = 74 + (k.boost > 0 ? 6 : 0) + sp * sp * 10;
-    camera.fov += (fov - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix();
+    camera.fov += (mobFov(fov) - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix();
     sun.position.set(k.pos.x + 60, k.y + 110, k.pos.z + 40); sun.target.position.set(k.pos.x, k.y, k.pos.z);
     snapCamera = true; return;
   }
@@ -4191,7 +4200,7 @@ function updateCamera(dt) {
   if (sp > 0.75 && state === 'race') { const j = (sp - 0.75) * 0.06; camera.position.x += rand(-j, j); camera.position.y += rand(-j, j); }   // vibração leve perto do máximo
   camLook.set(k.pos.x + fx * 6, k.y + 1.1, k.pos.z + fz * 6); camera.lookAt(camLook);
   const fov = 64 + (k.boost > 0 ? 6 + k.boostLevel * 2 : 0) + (k.drafting ? 3 : 0) + sp * sp * 11;
-  camera.fov += (fov - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix();
+  camera.fov += (mobFov(fov) - camera.fov) * Math.min(1, dt * 4); camera.updateProjectionMatrix();
   sun.position.set(k.pos.x + 60, k.y + 110, k.pos.z + 40); sun.target.position.set(k.pos.x, k.y, k.pos.z);
 }
 
