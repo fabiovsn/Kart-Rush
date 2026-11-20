@@ -27,4 +27,4 @@ No plano gratuito o serviço dorme após ~15 min sem uso (o primeiro acesso leva
 4. No log do Render deve aparecer `ranking: Upstash (…)`.
 
 Sem essas variáveis o ranking fica em `data/ranking.json` (ou em `DATA_DIR`, se houver disco persistente).
-API: `/api/ranking` (recorde de cada pista) e `/api/ranking/<pista>?mode=solo|mp&items=with|without` (top 10).
+API: `/api/ranking` (recorde de cada pista) e `/api/ranking/<pista>?mode=solo|mp&items=with|without` (top 10). Melhor volta é o padrão; para o tempo total da corrida use também `kind=race&laps=1|3|5`.

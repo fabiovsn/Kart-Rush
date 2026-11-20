@@ -1,10 +1,11 @@
-// Kart Rush v1.1 — servidor multijogador
+// Kart Rush v1.2 — servidor multijogador
 //  - serve o jogo (public/index.html) e o WebSocket em /ws
 //  - salas: lista, criar, entrar (com senha opcional), sair, admin expulsa / configura / inicia
 //  - corrida: grid com humanos + bots (completa até 8), largada sincronizada pelo relógio do servidor,
 //    retransmissão do estado de cada kart (~20x/s), bandeirada, resultado final e volta para a sala
 //  - itens (opção da sala): retransmite os efeitos (óleo na pista, escudo) para todos da corrida
-//  - ranking online por pista: melhor volta de cada jogador, separada por modo (solo / multijogador) e itens (com / sem);
+//  - ranking online por pista: melhor volta e melhor tempo de corrida (por nº de voltas) de cada jogador,
+//    separados por modo (solo / multijogador) e itens (com / sem);
 //    guardado no Upstash Redis (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN) ou, sem ele, em data/ranking.json
 const http = require('http'), fs = require('fs'), path = require('path');
 const { WebSocketServer } = require('ws');
@@ -16,7 +17,8 @@ const CAR_NAMES = ['Relâmpago', 'Faísca', 'Abelha', 'Ametista', 'Tornado', 'Ak
 const DIFF = [[0.8, 0.86], [0.88, 0.95], [0.96, 1.01]];
 const LAPS = [1, 3, 5];
 // ---------- ranking online ----------
-// RANK[pista] = [{ cid, name, time, car, mode: 'solo'|'mp', items: bool, date }] — um registro por jogador+nome+modo+itens (o melhor)
+// RANK[pista] = [{ cid, name, time, car, mode: 'solo'|'mp', items: bool, kind: 'lap'|'race', laps, date }]
+//   um registro por jogador+nome+modo+itens+tipo(+voltas) (o melhor); kind 'race' = tempo total da corrida com 'laps' voltas
 const DATA = process.env.DATA_DIR || path.join(__dirname, 'data'), RANK_FILE = path.join(DATA, 'ranking.json');   // DATA_DIR: disco persistente
 const UP_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, ''), UP_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
 const UP_KEY = 'kartrush:rank:';
@@ -27,7 +29,7 @@ const upstash = cmd => fetch(UP_URL, { method: 'POST', headers: { Authorization:
 function rankNormalize(obj) {   // aceita o formato antigo (v1.0: só solo sem itens)
   const out = {};
   for (const [t, list] of Object.entries(obj || {})) if (validTrack(t) && Array.isArray(list))
-    out[t] = list.filter(e => e && e.cid && e.time > 0).map(e => ({ cid: e.cid, name: e.name || 'Piloto', time: e.time, car: e.car | 0, mode: e.mode === 'mp' ? 'mp' : 'solo', items: !!e.items, date: e.date || 0 }));
+    out[t] = list.filter(e => e && e.cid && e.time > 0).map(e => ({ cid: e.cid, name: e.name || 'Piloto', time: e.time, car: e.car | 0, mode: e.mode === 'mp' ? 'mp' : 'solo', items: !!e.items, kind: e.kind === 'race' ? 'race' : 'lap', laps: e.kind === 'race' ? e.laps | 0 : 0, date: e.date || 0 }));
   return out;
 }
 async function rankLoad() {
@@ -59,14 +61,19 @@ function rankFiltered(track, f) {
     if (f.mode !== 'all' && e.mode !== f.mode) continue;
     if (f.items === 'with' && !e.items) continue;
     if (f.items === 'without' && e.items) continue;
+    if (e.kind !== f.kind || (f.kind === 'race' && e.laps !== f.laps)) continue;
     const k = e.cid + '|' + e.name, o = best.get(k);
     if (!o || e.time < o.time) best.set(k, e);
   }
   return [...best.values()].sort((a, b) => a.time - b.time || a.date - b.date);
 }
-const rankOut = (e, cid) => ({ name: e.name, time: e.time, car: e.car, mode: e.mode, items: e.items, date: e.date, me: !!cid && e.cid === cid });
-function rankFilter(m) { return { mode: ['solo', 'mp'].includes(m.mode) ? m.mode : 'all', items: ['with', 'without'].includes(m.items) ? m.items : 'all' }; }
-function rankView(track, cid, f = { mode: 'all', items: 'all' }, n = 10) {
+const rankOut = (e, cid) => ({ name: e.name, time: e.time, car: e.car, mode: e.mode, items: e.items, kind: e.kind, laps: e.laps, date: e.date, me: !!cid && e.cid === cid });
+const LAPS_OK = [1, 3, 5];
+function rankFilter(m) {   // kind: 'lap' (melhor volta, padrão) ou 'race' (tempo total, com laps 1/3/5)
+  const kind = m.kind === 'race' ? 'race' : 'lap';
+  return { mode: ['solo', 'mp'].includes(m.mode) ? m.mode : 'all', items: ['with', 'without'].includes(m.items) ? m.items : 'all', kind, laps: kind === 'race' ? (LAPS_OK.includes(+m.laps) ? +m.laps : 3) : 0 };
+}
+function rankView(track, cid, f = rankFilter({}), n = 10) {
   const all = rankFiltered(track, f), i = cid ? all.findIndex(e => e.cid === cid) : -1;
   return { track, list: all.slice(0, n).map(e => rankOut(e, cid)), total: all.length, pos: i >= 0 ? i + 1 : null, mine: i >= 0 ? all[i].time : null };
 }
@@ -75,18 +82,20 @@ function rankAll(cid, f) {   // recorde de cada pista (com o filtro)
   for (const t of Object.keys(RANK)) { const all = rankFiltered(t, f); if (all.length) out[t] = { ...rankOut(all[0], cid), total: all.length }; }
   return out;
 }
-function rankPut(track, cid, name, time, car, mode, items) {
-  if (!validTrack(track) || !cid || !(time >= 20 && time <= 900)) return false;
+function rankPut(track, cid, name, time, car, mode, items, kind = 'lap', laps = 0) {
+  if (!validTrack(track) || !cid || !(time >= 20 && time <= (kind === 'race' ? 900 * laps : 900))) return false;
+  if (kind === 'race' && !LAPS_OK.includes(laps)) return false;
   const list = RANK[track] || (RANK[track] = []);
-  const e = list.find(x => x.cid === cid && x.name === name && x.mode === mode && x.items === items);
+  const e = list.find(x => x.cid === cid && x.name === name && x.mode === mode && x.items === items && x.kind === kind && x.laps === laps);
   let improved = false;
-  if (!e) { list.push({ cid, name, time: +time.toFixed(3), car, mode, items, date: Date.now() }); improved = true; }
+  if (!e) { list.push({ cid, name, time: +time.toFixed(3), car, mode, items, kind, laps, date: Date.now() }); improved = true; }
   else if (time < e.time) { e.time = +time.toFixed(3); e.car = car; e.date = Date.now(); improved = true; }
   if (!improved) return false;
-  // limite por pista: os 80 melhores de cada combinação modo+itens
-  if (list.length > 320) {
-    const keep = new Set();
-    for (const md of ['solo', 'mp']) for (const it of [false, true]) list.filter(x => x.mode === md && x.items === it).sort((a, b) => a.time - b.time).slice(0, 80).forEach(x => keep.add(x));
+  // limite por pista: os 60 melhores de cada combinação modo+itens+tipo(+voltas)
+  if (list.length > 900) {
+    const groups = new Map();
+    for (const x of list) { const g = x.mode + x.items + x.kind + x.laps; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(x); }
+    const keep = new Set(); for (const g of groups.values()) g.sort((a, b) => a.time - b.time).slice(0, 60).forEach(x => keep.add(x));
     RANK[track] = list.filter(x => keep.has(x));
   }
   rankSave(track); return true;
@@ -225,7 +234,7 @@ function endRace(r) {
   res.sort((a, b) => (a.left - b.left) || ((a.time === null) - (b.time === null)) || (a.time !== null ? a.time - b.time : b.progress - a.progress));
   toRoom(r, 'raceEnd', { results: res, track: R.track, laps: R.laps });
   const win = res[0]; if (win) sys(r, `Vitória de ${win.name}!`);
-  r.lastRace = { track: R.track, items: R.items, until: now() + 90000 };   // a última volta pode chegar logo depois da bandeirada
+  r.lastRace = { track: R.track, items: R.items, laps: R.laps, until: now() + 90000 };   // a última volta pode chegar logo depois da bandeirada
   r.state = 'lobby'; r.race = null;
   broadcastRoom(r); broadcastRooms();
 }
@@ -313,13 +322,14 @@ function onMessage(c, m) {
       else if (validTrack(m.track)) send(c, 'rank', { rid, ...rankView(m.track, cid, f, Math.max(1, Math.min(10, m.n | 0 || 10))) });
       break;
     }
-    case 'rankPut': {   // volta completada pelo jogador (bots nunca enviam); no multijogador o servidor confere a corrida
+    case 'rankPut': {   // volta ou corrida completada pelo jogador (bots nunca enviam); no multijogador o servidor confere a corrida
       const cid = clean(m.cid, 40), name = clean(m.name, 16) || c.name || 'Piloto', car = Math.max(0, Math.min(CARS - 1, Math.floor(+m.car || 0)));
-      let mode = 'solo', items = !!m.items;
+      const kind = m.kind === 'race' ? 'race' : 'lap';
+      let mode = 'solo', items = !!m.items, laps = kind === 'race' ? +m.laps | 0 : 0;
       const R = r && r.race && r.state === 'race' ? r.race : r && r.lastRace && r.lastRace.until > now() ? r.lastRace : null;
-      if (R) { if (R.track !== m.track) return; mode = 'mp'; items = !!R.items; }
-      const improved = rankPut(m.track, cid, name, +m.time, car, mode, items);
-      if (validTrack(m.track)) send(c, 'rank', { rid: m.rid | 0, ...rankView(m.track, cid, { mode: 'all', items: 'all' }), improved, put: true, mode, items, name });
+      if (R) { if (R.track !== m.track) return; mode = 'mp'; items = !!R.items; if (kind === 'race') laps = R.laps; }
+      const improved = rankPut(m.track, cid, name, +m.time, car, mode, items, kind, laps);
+      if (validTrack(m.track)) send(c, 'rank', { rid: m.rid | 0, ...rankView(m.track, cid, rankFilter({ kind, laps })), improved, put: true, mode, items, kind, laps, name });
       break;
     }
     case 'finish': {

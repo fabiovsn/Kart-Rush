@@ -392,7 +392,7 @@
 <section class="scr" id="scr-title">
   <img class="logoimg" alt="Kart Rush">
   <div class="press pop" id="pressStart">PRESSIONE ENTER</div>
-  <div id="ver">v1.1</div>
+  <div id="ver">v1.2</div>
 </section>
 
 <section class="scr shade-left" id="scr-main">
@@ -540,6 +540,7 @@
   <div class="rkwrap panel">
     <div class="rkfilters">
       <div class="opt"><span>PISTA</span><select class="inp" id="rkTrack"></select></div>
+      <div class="opt"><span>TEMPO</span><div class="seg" id="rkKind"><button data-v="0">MELHOR VOLTA</button><button data-v="1">CORRIDA 1 VOLTA</button><button data-v="2">CORRIDA 3 VOLTAS</button><button data-v="3">CORRIDA 5 VOLTAS</button></div></div>
       <div class="opt"><span>MODO</span><div class="seg" id="rkMode"><button data-v="0">GERAL</button><button data-v="1">SOLO</button><button data-v="2">MULTIJOGADOR</button></div></div>
       <div class="opt"><span>ITENS</span><div class="seg" id="rkItems"><button data-v="0">TODOS</button><button data-v="1">SEM ITENS</button><button data-v="2">COM ITENS</button></div></div>
     </div>
@@ -585,7 +586,7 @@
     </table>
     <p>Quem está atrás ganha mais turbo, motor e pneus; quem está na frente, mais óleo e escudo. A barra no topo mostra quanto falta de motor e pneus.<br>
     <b>Obstáculos</b> (só com itens, sempre num lado da pista — o outro fica livre): cones, barris, cavaletes e placas voam quando atingidos e o kart perde um pouco; tire wall faz bater e voltar; barreira de concreto não deixa passar; poças de óleo fazem rodar.<br>
-    <b>Ranking online:</b> toda volta completada por você entra sozinha no ranking da pista (bots não entram). No solo, escolha em NOME se aparece com o seu nome ou com o nome do piloto do carro; no multijogador vale o nome da sala. O menu RANKING mostra os 10 melhores de cada pista, com filtros por modo (solo / multijogador) e itens.</p>
+    <b>Ranking online:</b> toda volta completada por você entra sozinha no ranking da pista (bots não entram). No solo, escolha em NOME se aparece com o seu nome ou com o nome do piloto do carro; no multijogador vale o nome da sala. Corridas completadas também registram o tempo total (separado por 1, 3 ou 5 voltas). O menu RANKING mostra os 10 melhores de cada pista, com filtros por tempo (melhor volta ou corrida), modo (solo / multijogador) e itens.</p>
     </div>
     </div>
     <p style="font-family:system-ui,sans-serif;font-size:10px;opacity:.55;margin:4px 0">Créditos 3D: kart "Modular Go-kart" por Jungle Jim (sketchfab.com/jungle_jim, CC BY 4.0) · pilotos criados pelo Fábio (Tripo) · árvores, pedras, cones, barreiras e tire wall enviados pelo Fábio · arbustos e flores Stylized Nature MegaKit por Quaternius (CC0) · texturas de pista e pneus a partir de modelos de sketchfab.com/HY2245 · cactos e rochas do deserto: "racing heroes - dust bowl" por amogusstrikesback2 (CC BY 4.0) · sons Kenney (CC0).</p>
@@ -677,7 +678,7 @@ const TEX_LIST = ["drv_f_albedo", "drv_f_mask", "drv_f_normal", "drv_m_albedo", 
 </script>
 <script>
 /* =========================================================
-   KART RUSH — v1.1
+   KART RUSH — v1.2
    Workflow de games · HTML/JS + Three.js (r128), arquivo único
    - 24 pistas da F1 (traçado real) + Kart Point; corrida, campeonato, contra o relógio, multijogador
    - corrida limpa ou com itens (caixas, obstáculos, óleo, escudo, turbo, motor, pneus); ranking online
@@ -2102,10 +2103,19 @@ function tintedMaterial(map, mask, a, b, normalMap, c) {   // cor da textura x c
   m.customProgramCacheKey = () => 'kartTint' + (normalMap ? 'N' : '');
   m.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, u);
-    sh.fragmentShader = 'uniform sampler2D maskMap; uniform vec3 tintA; uniform vec3 tintB; uniform vec3 tintC;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
+    sh.vertexShader = 'attribute float helmW; varying float vHelm;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vHelm = helmW;');
+    sh.fragmentShader = 'uniform sampler2D maskMap; uniform vec3 tintA; uniform vec3 tintB; uniform vec3 tintC; varying float vHelm;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
       vec4 texelColor = texture2D( map, vUv ); vec3 mk = texture2D( maskMap, vUv ).rgb;
+      float helm = max(smoothstep(0.35, 0.75, mk.g), smoothstep(0.5, 0.95, vHelm));   // capacete: cor lisa (sem manchas da textura nem emendas)
       texelColor.rgb *= mix(vec3(1.0), tintA, mk.r) * mix(vec3(1.0), tintB, mk.g) * mix(vec3(1.0), tintC, mk.b);
+      texelColor.rgb = mix(texelColor.rgb, vec3(0.86) * tintB, helm);
       diffuseColor *= texelColor;
+    #endif`).replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+    #ifdef USE_MAP
+      roughnessFactor = mix(roughnessFactor, 0.22, helm);   // capacete com verniz
+    #endif`).replace('mapN.xy *= normalScale;', `mapN.xy *= normalScale;
+    #ifdef USE_MAP
+      mapN.xy *= 1.0 - helm;   // sem o relevo (amassados) do modelo original no capacete
     #endif`);
   };
   return m;
@@ -2128,18 +2138,108 @@ function paintMaterial(a) {
 }
 let _wheelMat = null;
 const SHADOW_PROXY_MAT = OFFSCREEN_MAT();
-function makeKartAsset(car) {
+// capacete liso: suaviza a forma (amassados e vincos do modelo original) só onde a máscara marca o capacete (canal G)
+// vértices soldados por posição (não abre as costuras de UV); só o capacete muda
+const _helmDone = new WeakSet();
+function smoothHelmet(geo, maskTex) {
+  if (!geo || _helmDone.has(geo) || !maskTex || !maskTex.image || !geo.attributes.uv) return; _helmDone.add(geo);
+  try {
+    const img = maskTex.image, W = Math.min(512, img.width), H = Math.min(512, img.height), cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, W, H); const px = cx.getImageData(0, 0, W, H).data;
+    const pos = geo.attributes.position, uv = geo.attributes.uv, nor = geo.attributes.normal, n = pos.count;
+    const ss = x => { const t = Math.min(1, Math.max(0, (x - 0.35) / 0.4)); return t * t * (3 - 2 * t); };
+    // soldar por posição
+    const key = new Map(), gid = new Int32Array(n); let ng = 0;
+    for (let i = 0; i < n; i++) { const k = Math.round(pos.getX(i) * 1e4) + ',' + Math.round(pos.getY(i) * 1e4) + ',' + Math.round(pos.getZ(i) * 1e4); let g = key.get(k); if (g === undefined) { g = ng++; key.set(k, g); } gid[i] = g; }
+    const w = new Float32Array(ng), P = new Float32Array(ng * 3);
+    const samp = (u, v) => { u -= Math.floor(u); v -= Math.floor(v); return ss(px[((Math.min(H - 1, Math.floor(v * H)) * W) + Math.min(W - 1, Math.floor(u * W))) * 4 + 1] / 255); };
+    for (let i = 0; i < n; i++) { const g = gid[i]; P[g * 3] = pos.getX(i); P[g * 3 + 1] = pos.getY(i); P[g * 3 + 2] = pos.getZ(i); }
+    {   // máscara lida no centro de cada triângulo (o vértice fica na borda da ilha de UV e às vezes cai fora da máscara)
+      const ix = geo.index ? geo.index.array : null, nt0 = (ix ? ix.length : n) / 3;
+      for (let t = 0; t < nt0; t++) {
+        const a = ix ? ix[t * 3] : t * 3, b = ix ? ix[t * 3 + 1] : t * 3 + 1, c = ix ? ix[t * 3 + 2] : t * 3 + 2;
+        const m = samp((uv.getX(a) + uv.getX(b) + uv.getX(c)) / 3, (uv.getY(a) + uv.getY(b) + uv.getY(c)) / 3);
+        if (m > 0) for (const q of [a, b, c]) w[gid[q]] = Math.max(w[gid[q]], m);
+      }
+    }
+    if (!w.some(x => x > 0)) return;
+    // suavização espacial (atravessa as frestas entre as placas do capacete, que não são ligadas na malha):
+    // normal = média das normais num raio; posição só se move ao longo da normal (preenche vincos sem encolher)
+    const Nv = new Float32Array(ng * 3);
+    if (nor) for (let i = 0; i < n; i++) { const g = gid[i]; Nv[g * 3] += nor.getX(i); Nv[g * 3 + 1] += nor.getY(i); Nv[g * 3 + 2] += nor.getZ(i); }
+    const S = []; for (let g = 0; g < ng; g++) if (w[g] > 0) S.push(g);
+    let mnY = 1e9, mxY = -1e9; for (const g of S) { mnY = Math.min(mnY, P[g * 3 + 1]); mxY = Math.max(mxY, P[g * 3 + 1]); }
+    // fecha as frestas entre as placas: vértices de borda do capacete se juntam ao vértice de borda mais próximo de outra placa
+    {
+      const idx = geo.index ? geo.index.array : null, nt = (idx ? idx.length : n) / 3, ec = new Map(), ring = new Map();
+      const e = (a, b) => { const k = a < b ? a * ng + b : b * ng + a; ec.set(k, (ec.get(k) || 0) + 1); let r = ring.get(a); if (!r) ring.set(a, r = new Set()); r.add(b); };
+      for (let t = 0; t < nt; t++) { const a = gid[idx ? idx[t * 3] : t * 3], b = gid[idx ? idx[t * 3 + 1] : t * 3 + 1], c = gid[idx ? idx[t * 3 + 2] : t * 3 + 2]; if (!(w[a] > 0 && w[b] > 0 && w[c] > 0)) continue; e(a, b); e(b, a); e(b, c); e(c, b); e(c, a); e(a, c); }
+      const Bset = new Set(); for (const [k, c] of ec) if (c === 2) { Bset.add(Math.floor(k / ng)); Bset.add(k % ng); }   // aresta usada por 1 triângulo (contada 2x: a-b e b-a)
+      const B = [...Bset], gap = (mxY - mnY) * 0.05, G2 = gap * gap, bc = new Map(), bk = (x, y, z) => x + ',' + y + ',' + z;
+      for (const g of B) { const k = bk(Math.floor(P[g * 3] / gap), Math.floor(P[g * 3 + 1] / gap), Math.floor(P[g * 3 + 2] / gap)); let c = bc.get(k); if (!c) bc.set(k, c = []); c.push(g); }
+      const tgt = new Map();
+      for (const g of B) {
+        const x = P[g * 3], y = P[g * 3 + 1], z = P[g * 3 + 2], r = ring.get(g) || new Set(); let best = -1, bd = G2;
+        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) {
+          const c = bc.get(bk(Math.floor(x / gap) + i, Math.floor(y / gap) + j, Math.floor(z / gap) + k)); if (!c) continue;
+          for (const h of c) { if (h === g || r.has(h)) continue; const dx = P[h * 3] - x, dy = P[h * 3 + 1] - y, dz = P[h * 3 + 2] - z, d2 = dx * dx + dy * dy + dz * dz; if (d2 < bd) { bd = d2; best = h; } }
+        }
+        if (best >= 0) tgt.set(g, [(x + P[best * 3]) / 2, (y + P[best * 3 + 1]) / 2, (z + P[best * 3 + 2]) / 2]);
+      }
+      for (const [g, q] of tgt) { P[g * 3] = q[0]; P[g * 3 + 1] = q[1]; P[g * 3 + 2] = q[2]; }
+    }
+    const R = (mxY - mnY) * 0.11, R2 = R * R, cell = new Map(), ck = (x, y, z) => x + ',' + y + ',' + z;
+    const step = Math.ceil(S.length / 12000), SS = step > 1 ? S.filter((_, i) => i % step === 0) : S;   // malha densa: média com uma amostra (mesmo resultado, bem mais rápido)
+    for (const g of SS) { const k = ck(Math.floor(P[g * 3] / R), Math.floor(P[g * 3 + 1] / R), Math.floor(P[g * 3 + 2] / R)); let c = cell.get(k); if (!c) cell.set(k, c = []); c.push(g); }
+    const N = new Float32Array(ng * 3), NP = new Float32Array(ng * 3), va = new THREE.Vector3(), vb = new THREE.Vector3();
+    // normais orientadas para fora (capacete ~convexo, a partir do centro); paredes dos vincos (normal de lado) não entram na média
+    let Cx = 0, Cy = 0, Cz = 0; for (const g of S) { Cx += P[g * 3]; Cy += P[g * 3 + 1]; Cz += P[g * 3 + 2]; } Cx /= S.length; Cy /= S.length; Cz /= S.length;
+    const OK = new Uint8Array(ng);
+    for (const g of S) {
+      const rx = P[g * 3] - Cx, ry = P[g * 3 + 1] - Cy, rz = P[g * 3 + 2] - Cz, rl = Math.hypot(rx, ry, rz) || 1;
+      let nx = Nv[g * 3], ny = Nv[g * 3 + 1], nz = Nv[g * 3 + 2]; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+      let d = (nx * rx + ny * ry + nz * rz) / rl; if (d < 0) { nx = -nx; ny = -ny; nz = -nz; d = -d; }
+      Nv[g * 3] = nx; Nv[g * 3 + 1] = ny; Nv[g * 3 + 2] = nz; OK[g] = d > 0.35 ? 1 : 0;
+    }
+    for (let pass = 0; pass < 2; pass++) {
+      for (const g of S) {
+        const x = P[g * 3], y = P[g * 3 + 1], z = P[g * 3 + 2], cx0 = Math.floor(x / R), cy0 = Math.floor(y / R), cz0 = Math.floor(z / R);
+        let nx = 0, ny = 0, nz = 0, px = 0, py = 0, pz = 0, ws = 0;
+        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) {
+          const c = cell.get(ck(cx0 + i, cy0 + j, cz0 + k)); if (!c) continue;
+          for (const h of c) {
+            const dx = P[h * 3] - x, dy = P[h * 3 + 1] - y, dz = P[h * 3 + 2] - z, d2 = dx * dx + dy * dy + dz * dz; if (d2 > R2) continue;
+            const q = (pass ? N : Nv); if (!pass && !OK[h]) continue;
+            const f = 1 - d2 / R2; nx += q[h * 3] * f; ny += q[h * 3 + 1] * f; nz += q[h * 3 + 2] * f; px += dx * f; py += dy * f; pz += dz * f; ws += f;
+          }
+        }
+        va.set(nx, ny, nz).normalize(); N[g * 3] = va.x; N[g * 3 + 1] = va.y; N[g * 3 + 2] = va.z;
+        const off = ws ? (px * va.x + py * va.y + pz * va.z) / ws : 0; NP[g * 3] = x + va.x * off * w[g]; NP[g * 3 + 1] = y + va.y * off * w[g]; NP[g * 3 + 2] = z + va.z * off * w[g];
+      }
+      for (const g of S) { P[g * 3] = NP[g * 3]; P[g * 3 + 1] = NP[g * 3 + 1]; P[g * 3 + 2] = NP[g * 3 + 2]; }
+    }
+    for (let i = 0; i < n; i++) {
+      const g = gid[i]; if (!(w[g] > 0)) continue;
+      pos.setXYZ(i, P[g * 3], P[g * 3 + 1], P[g * 3 + 2]);
+      if (nor) { va.set(N[g * 3], N[g * 3 + 1], N[g * 3 + 2]); vb.set(nor.getX(i), nor.getY(i), nor.getZ(i)); if (vb.dot(va) < 0) vb.negate(); vb.lerp(va, w[g]).normalize(); nor.setXYZ(i, vb.x, vb.y, vb.z); }
+    }
+    const hw = new Float32Array(n); for (let i = 0; i < n; i++) hw[i] = w[gid[i]];
+    geo.setAttribute('helmW', new THREE.BufferAttribute(hw, 1));   // peso do capacete por vértice: cor lisa também nas emendas da textura
+    geo.attributes.position.needsUpdate = true; if (geo.attributes.normal) geo.attributes.normal.needsUpdate = true; geo.computeBoundingSphere();
+  } catch (e) { console.warn('capacete:', e); }
+}
+function makeKartAsset(car, detail) {   // detail: garagem e o kart do jogador (no celular também usam o piloto completo)
   const F = KART_FIT, root = new THREE.Group(), body = new THREE.Group(); root.add(body);
   const suit = new THREE.Color(car.color).offsetHSL(0, -0.08, -0.17).getHex();   // macacão mais escuro que o kart: piloto se destaca
   const mk = (geo, mat, sx, sy, sz, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
   const add = (geo, mat, sx, sy, sz, x, y, z, parent = body) => { const m = mk(geo, mat, sx, sy, sz, x, y, z); parent.add(m); return m; };
   // níveis de detalhe: malha original de perto (garagem e o próprio kart), média e leve para os outros karts
-  const lod3 = (hi, mid, lo, mat, sx = F.S, sy = F.S, sz = F.S, x = 0, y = 0, z = 0, parent = body) => {
-    if (IS_MOBILE && mid) { hi = mid; mid = null; }   // celular: média de perto, leve mais cedo
+  const lod3 = (hi, mid, lo, mat, sx = F.S, sy = F.S, sz = F.S, x = 0, y = 0, z = 0, parent = body, full = false) => {
+    if (IS_MOBILE && mid && !full) { hi = mid; mid = null; }   // celular: média de perto, leve mais cedo
     if (!mid && !lo) return add(hi, mat, sx, sy, sz, x, y, z, parent);
     const l = new THREE.LOD(); l.position.set(x, y, z); l.addLevel(mk(hi, mat, sx, sy, sz, 0, 0, 0), 0);
-    if (mid) l.addLevel(mk(mid, mat, sx, sy, sz, 0, 0, 0), F.lodMid);
-    if (lo) l.addLevel(mk(lo, mat, sx, sy, sz, 0, 0, 0), IS_MOBILE ? 12 : F.lodLo);
+    if (mid) l.addLevel(mk(mid, mat, sx, sy, sz, 0, 0, 0), IS_MOBILE ? 8 : F.lodMid);
+    if (lo) l.addLevel(mk(lo, mat, sx, sy, sz, 0, 0, 0), IS_MOBILE ? (full ? 16 : 12) : F.lodLo);
     parent.add(l);
     if (lo) {   // sombra vem da versão leve (invisível na imagem): mesma silhueta, bem menos triângulos na passada de sombra
       for (const lv of l.levels) lv.object.castShadow = false;
@@ -2149,7 +2249,8 @@ function makeKartAsset(car) {
   };
   lod3(ASSETS.kart_body_v3, ASSETS.kart_body_v3_mid, ASSETS.kart_body_v3_lo, paintMaterial(car.color));
   const g = car.driver === 'f' && ASSETS.drv_f ? 'f' : 'm';   // pilotos do Tripo (Fábio): já sentados, com o volante nas mãos
-  root.userData.driver = lod3(ASSETS['drv_' + g], ASSETS['drv_' + g + '_mid'], ASSETS['drv_' + g + '_lo'], tintedMaterial(TX['drv_' + g + '_albedo'], TX['drv_' + g + '_mask'], suit, car.helmet, TX['drv_' + g + '_normal'], HAIR_COLOR));
+  for (const lv of ['', '_mid', '_lo']) smoothHelmet(ASSETS['drv_' + g + lv], TX['drv_' + g + '_mask']);
+  root.userData.driver = lod3(ASSETS['drv_' + g], ASSETS['drv_' + g + '_mid'], ASSETS['drv_' + g + '_lo'], tintedMaterial(TX['drv_' + g + '_albedo'], TX['drv_' + g + '_mask'], suit, car.helmet, TX['drv_' + g + '_normal'], HAIR_COLOR), F.S, F.S, F.S, 0, 0, 0, body, !!detail);
   const wm = _wheelMat || (_wheelMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.15 })), wheels = [], front = [];
   for (const s of [-1, 1]) {   // do lado esquerdo a roda gira 180° para o aro ficar para fora
     const piv = new THREE.Group(); piv.position.set(s * F.fx, F.fy, F.fz); body.add(piv);
@@ -2167,8 +2268,8 @@ function makeKartAsset(car) {
   Object.assign(root.userData, { body, wheels, front });
   return root;
 }
-function makeCarMesh(car) {
-  if (ASSETS.kart_body_v3 && ASSETS.drv_m && ASSETS.kart_wheel_v3 && TX.drv_m_albedo) return makeKartAsset(car);
+function makeCarMesh(car, detail) {
+  if (ASSETS.kart_body_v3 && ASSETS.drv_m && ASSETS.kart_wheel_v3 && TX.drv_m_albedo) return makeKartAsset(car, detail);
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
   const mat = L({ color: car.color }), dark = L({ color: 0x222228 }), suit = L({ color: new THREE.Color(car.color).offsetHSL(0, -0.1, 0.15) });
   const add = (geo, m, x, y, z, parent = body) => { const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.castShadow = true; parent.add(mesh); return mesh; };
@@ -2249,7 +2350,7 @@ function setupKarts(spec) {
   for (const k of karts) { if (k.tagSprite) k.tagSprite.material.map.dispose(); disposeGroup(k.mesh); scene.remove(k.mesh); }
   karts = spec.map((e, slot) => {
     const base = CARS[e.car], car = applyLivery(base, e.livery, e.kind === 'remote'), isPlayer = e.kind === 'player';
-    const mesh = makeCarMesh(car); scene.add(mesh);
+    const mesh = makeCarMesh(car, isPlayer); scene.add(mesh);
     const k = { car, base, carIdx: e.car, name: e.name, color: car.color, isPlayer, kind: e.kind, id: e.id ?? ('k' + slot), mesh, slot, stats: carStats(base),
              pos: new THREE.Vector3(), y: 0, vx: 0, vz: 0, vf: 0, yaw: 0, steerS: 0, idx: 0, progress: 0, lat: 0, surf: 0,
              lap: 0, finished: false, finishTime: 0, lapStart: 0, lapTimes: [],
@@ -2754,7 +2855,11 @@ function applyLivery(base, id, force) {
   if (!l || !l.color || (!force && !isUnlocked(l))) return base;
   return Object.assign({}, base, { color: l.color, helmet: l.helmet });
 }
-let selLivery = store.get('livery') || 'padrao';
+// pintura escolhida separadamente para cada carro (antes era uma só para todos e pintava todos os carros da garagem)
+const livByCar = (() => { const m = store.get('liveries'); return m && typeof m === 'object' ? m : {}; })();
+const livFor = ci => (typeof ci !== 'number' || !CARS[ci]) ? 'padrao' : (livByCar[ci] || 'padrao');
+function setLiv(ci, id) { if (typeof ci !== 'number' || !CARS[ci]) return; if (id === 'padrao') delete livByCar[ci]; else livByCar[ci] = id; store.set('liveries', livByCar); }
+let selLivery = livFor(1);
 let noticeTimer = null;
 function notice(text, delay = 0) { setTimeout(() => { const n = $('notice'); n.textContent = text; n.classList.remove('on'); void n.offsetWidth; n.classList.add('on'); clearTimeout(noticeTimer); noticeTimer = setTimeout(() => n.classList.remove('on'), 2600); Sound.lap(true); }, delay); }
 function addProgress(fn) {
@@ -2796,7 +2901,7 @@ $('cupOk').onclick = () => startCup();
 function startCup() {
   const c = CUPS[selCup], car = selCar === RANDOM ? Math.floor(Math.random() * CARS.length) : selCar;
   const ids = c.tracks || [...TRACKS].sort(() => Math.random() - 0.5).slice(0, 4).map(t => t.id);
-  const spec = soloGrid(car, selLivery).map((e, i) => Object.assign(e, { id: 'c' + i, skill: e.kind === 'bot' ? rand(...DIFF[difficulty]) : 1, pers: makePersonality() }));
+  const spec = soloGrid(car, livFor(car)).map((e, i) => Object.assign(e, { id: 'c' + i, skill: e.kind === 'bot' ? rand(...DIFF[difficulty]) : 1, pers: makePersonality() }));
   cup = { def: c, ids, race: 0, spec, pts: Object.fromEntries(spec.map(e => [e.id, 0])) };
   Sound.ui.ok(); beginLoading(car, TRACKS.find(t => t.id === ids[0]), cup.spec);
 }
@@ -2866,7 +2971,7 @@ function ttLap(k, lt) {
   const id = T.def.id, g = loadGhost(id);
   ttRec.push(Math.round(lt * 100) / 100, k.pos.x, k.y, k.pos.z, k.yaw);
   if (!g || lt < g.t) {
-    store.set('ghost_' + id, { t: lt, car: k.carIdx, liv: selLivery, s: ttRec });
+    store.set('ghost_' + id, { t: lt, car: k.carIdx, liv: livFor(k.carIdx), s: ttRec });
     if (g) showToast('NOVO FANTASMA!', '#bfe8ff');
     const ng = loadGhost(id), gk = karts.find(x => x.ghost);
     if (ng) { if (gk) gk.data = ng; else karts.push(makeGhostKart(ng)); }
@@ -2944,7 +3049,7 @@ function showGarageCar(i) {
     const sil = makeCarMesh({ style: 'kart', color: 0x0c0818, helmet: 0x0c0818 }); garageCar.add(sil);
     sil.traverse(o => { if (o.material && o.material.color) o.material.color.setHex(0x15101f); });
     const q = new THREE.Sprite(new THREE.SpriteMaterial({ map: qTex })); q.scale.set(3, 3, 1); q.position.set(0, 4, 0); garageCar.add(q);
-  } else garageCar = makeCarMesh(applyLivery(CARS[i], typeof garageLivery !== 'undefined' ? garageLivery : 'padrao', true));
+  } else garageCar = makeCarMesh(applyLivery(CARS[i], typeof garageLivery !== 'undefined' ? garageLivery : 'padrao', true), true);
   garageCar.position.y = 0.3; garageCar.scale.setScalar(0.001); garageCar.userData.pop = 0;
   turntable.add(garageCar);
 }
@@ -3017,6 +3122,7 @@ function carSlots() { return [...CARS.map((c, i) => i), RANDOM]; }
 function renderCar() {
   const slots = carSlots(), idx = slots.indexOf(selCar);
   const c = selCar === RANDOM ? null : CARS[selCar];
+  selLivery = livFor(selCar);
   $('carClass').textContent = c ? `KART Nº ${c.num} · ${c.driver === 'f' ? 'PILOTA' : 'PILOTO'}` : 'SURPRESA';   // todos iguais: só muda o visual
   $('carName').textContent = c ? c.name.toUpperCase() : 'ALEATÓRIO';
   { const el = $('carName'); el.style.fontSize = ''; if (c && c.name.length > 12) el.style.fontSize = Math.round(parseFloat(getComputedStyle(el).fontSize) * 0.62) + 'px'; }   // nomes longos numa linha só
@@ -3034,13 +3140,12 @@ function renderCar() {
 function cycleCar(d) { const s = carSlots(); selCar = s[(s.indexOf(selCar) + d + s.length) % s.length]; renderCar(); }
 $('carPrev').onclick = () => cycleCar(-1);
 $('carNext').onclick = () => cycleCar(1);
-function cycleLivery(d) { const i = LIVERIES.findIndex(l => l.id === selLivery); selLivery = LIVERIES[(i + d + LIVERIES.length) % LIVERIES.length].id; Sound.ui.move(); renderCar(); }
+function cycleLivery(d) { if (selCar === RANDOM) return; const i = LIVERIES.findIndex(l => l.id === selLivery); setLiv(selCar, LIVERIES[(i + d + LIVERIES.length) % LIVERIES.length].id); Sound.ui.move(); renderCar(); }
 $('livPrev').onclick = () => cycleLivery(-1);
 $('livNext').onclick = () => cycleLivery(1);
 function carConfirm() {
   const lv = LIVERIES.find(l => l.id === selLivery);
-  if (!isUnlocked(lv)) { selLivery = 'padrao'; }
-  store.set('livery', selLivery);
+  if (!isUnlocked(lv)) { setLiv(selCar, 'padrao'); selLivery = 'padrao'; }   // pintura bloqueada: só para ver
   goScreen(mode === 'cup' ? 'cup' : 'track');
 }
 $('carOk').onclick = () => carConfirm();
@@ -3191,7 +3296,7 @@ function beginLoading(carIdx, def, spec) {
   document.querySelectorAll('.scr').forEach(s => s.classList.remove('on')); $('steps').classList.remove('on');
   $('loadingText').textContent = 'CARREGANDO ' + def.name.toUpperCase();
   $('loading').style.display = 'flex';
-  lastRace = { carIdx, def, spec: spec || (mode === 'tt' ? [{ car: carIdx, kind: 'player', name: 'Você', livery: selLivery }] : soloGrid(carIdx, selLivery)) };
+  lastRace = { carIdx, def, spec: spec || (mode === 'tt' ? [{ car: carIdx, kind: 'player', name: 'Você', livery: livFor(carIdx) }] : soloGrid(carIdx, livFor(carIdx))) };
   setTimeout(() => {   // espera um frame para a tela de carregamento aparecer
     if (!T || T.def !== def) buildTrack(def);
     buildGrass();
@@ -3280,7 +3385,7 @@ $('roomBtn').onclick = () => netBackToRoom();
 let cdTime = 0, goAt = 3.6, raceTime = 0, resultsTimer = 0, goTimer = 0;
 function startCountdown() {
   SMOKE.clear(); SKIDS.clear();
-  raceItems = mode === 'mp' ? !!(Net.race && Net.race.items) : (mode !== 'tt' && itemsPref); rankSent = false; rankRaceBest = Infinity; rankLast = null; rankPending = 0; $('resRank').innerHTML = '';
+  raceItems = mode === 'mp' ? !!(Net.race && Net.race.items) : (mode !== 'tt' && itemsPref); rankSent = false; rankRaceBest = Infinity; rankLast = null; rankLastRace = null; rankPending = 0; $('resRank').innerHTML = '';
   ITEMS.start();
   if (state !== 'intro' && state !== 'loading' && state !== 'done' && state !== 'paused' && state !== 'race' && state !== 'countdown') return;
   document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
@@ -3680,10 +3785,11 @@ const RANK = (() => {
   return {
     onMsg,
     get: (track, f = {}) => req('rankGet', { track, ...f }),            // track: id da pista (top 10) ou 'all' (recorde de cada pista)
-    put: (track, time, car, name, items) => req('rankPut', { track, time, car, name, items }),
+    put: (track, time, car, name, items, kind = 'lap', laps = 0) => req('rankPut', { track, time, car, name, items, kind, laps }),
   };
 })();
-const RANK_MODE = ['all', 'solo', 'mp'], RANK_ITEMS = ['all', 'without', 'with'];
+const RANK_MODE = ['all', 'solo', 'mp'], RANK_ITEMS = ['all', 'without', 'with'], RANK_KIND = [['lap', 0], ['race', 1], ['race', 3], ['race', 5]];
+const kindLabel = (kind, laps) => kind === 'race' ? `CORRIDA · ${laps} VOLTA${laps > 1 ? 'S' : ''}` : 'MELHOR VOLTA';
 const rankTags = e => `<span class="rktag">${e.mode === 'mp' ? 'MULTIJOGADOR' : 'SOLO'}</span><span class="rktag">${e.items ? 'COM ITENS' : 'SEM ITENS'}</span>`;
 // nome usado no ranking
 let rankAs = store.get('rankAs') === 1 ? 1 : store.get('rankAs') === 0 ? 0 : (store.get('mpName') ? 0 : 1);   // 0 = seu nome, 1 = piloto do carro
@@ -3709,12 +3815,18 @@ for (const pre of ['opt', 'cup']) {
   $(pre + 'PnameIn').onchange = () => renderPname();
 }
 // envio das voltas
-let rankSent = false, rankRaceBest = Infinity, rankLast = null, rankPending = 0;
+let rankSent = false, rankRaceBest = Infinity, rankLast = null, rankLastRace = null, rankPending = 0;
 function rankLap(k, lt) {
   if (!T.def || !(lt < rankRaceBest)) return;
   rankRaceBest = lt; rankPending++;
   const id = T.def.id, name = rankName(k);
   RANK.put(id, lt, k.carIdx, name, !!raceItems).then(m => { rankLast = m; }).catch(() => { rankLast = rankLast || { offline: true }; })
+    .finally(() => { rankPending--; if (rankSent) rankShow(); });
+}
+function rankRace(k) {   // corrida completada (todas as voltas, cruzando a linha): tempo total
+  if (!T.def || !k.finishTime || k.lapTimes.length < CONFIG.LAPS) return;
+  rankPending++;
+  RANK.put(T.def.id, k.finishTime, k.carIdx, rankName(k), !!raceItems, 'race', CONFIG.LAPS).then(m => { rankLastRace = m; }).catch(() => { })
     .finally(() => { rankPending--; if (rankSent) rankShow(); });
 }
 function rankShow() {
@@ -3723,8 +3835,9 @@ function rankShow() {
   const m = rankLast;
   if (rankPending && (!m || m.offline)) { el.innerHTML = '<span style="opacity:.75">Enviando para o ranking online…</span>'; return; }
   if (!m || m.offline) { el.innerHTML = '<span style="opacity:.75">Ranking online indisponível (sem conexão com o servidor).</span>'; return; }
-  el.innerHTML = `RANKING ONLINE · ${esc(T.def.name)} · como <b>${esc(m.name)}</b>: ${m.improved ? 'nova melhor volta sua! ' : ''}` +
-    `${m.pos ? `<b style="color:#ffd400">${m.pos}º</b> de ${m.total} (${fmt(m.mine)})` : ''}`;
+  const r = rankLastRace, posTxt = x => x.pos ? `<b style="color:#ffd400">${x.pos}º</b> de ${x.total} (${fmt(x.mine)})` : '';
+  el.innerHTML = `RANKING ONLINE · ${esc(T.def.name)} · como <b>${esc(m.name)}</b> — volta: ${m.improved ? 'nova melhor sua! ' : ''}${posTxt(m)}` +
+    (r && !r.offline ? ` · corrida (${r.laps} volta${r.laps > 1 ? 's' : ''}): ${r.improved ? 'novo melhor tempo seu! ' : ''}${posTxt(r)}` : '');
 }
 function rankSubmit() {   // chamado ao abrir o resultado: as voltas já foram enviadas durante a corrida
   if (rankSent || !player) return; rankSent = true; rankShow();
@@ -3734,31 +3847,33 @@ function showTrackRank(id) {
   const el = $('tRank'); if (!el) return;
   if (!id || id === RANDOM) { el.innerHTML = '<h4>RECORDE ONLINE</h4><div style="opacity:.75">Escolha uma pista para ver o recorde.</div>'; return; }
   el.innerHTML = '<h4>RECORDE ONLINE</h4><div style="opacity:.75">carregando…</div>'; el.dataset.id = id;
-  RANK.get(id, { n: 1 }).then(m => {
+  const L = CONFIG.LAPS;
+  Promise.all([RANK.get(id, { n: 1 }), RANK.get(id, { n: 1, kind: 'race', laps: L })]).then(([m, mr]) => {
     if (el.dataset.id !== id) return;
-    const e = m.list[0];
-    el.innerHTML = '<h4>RECORDE ONLINE</h4>' + (e ? `<div><b style="font-size:16px">${fmt(e.time)}</b> · ${esc(e.name)} ${rankTags(e)}</div>` : '<div style="opacity:.75">Ninguém no ranking desta pista ainda. Seja o primeiro!</div>');
+    const line = (lbl, e) => `<div><span style="opacity:.7">${lbl}:</span> ${e ? `<b style="font-size:16px">${fmt(e.time)}</b> · ${esc(e.name)} ${rankTags(e)}` : '<span style="opacity:.6">sem tempos ainda</span>'}</div>`;
+    el.innerHTML = '<h4>RECORDE ONLINE</h4>' + line('Volta', m.list[0]) + line(`Corrida (${L} volta${L > 1 ? 's' : ''})`, mr.list[0]);
   }).catch(() => { if (el.dataset.id === id) el.innerHTML = '<h4>RECORDE ONLINE</h4><div style="opacity:.75">Sem conexão com o servidor do Kart Rush (abra o jogo pelo endereço do servidor).</div>'; });
 }
 // tela RANKING
-const rkF = { track: 'all', mode: 0, items: 0 };
+const rkF = { track: 'all', mode: 0, items: 0, kind: 0 };
 function renderRankScreen() {
   const sel = $('rkTrack');
   if (!sel.options.length) sel.innerHTML = `<option value="all">Todas as pistas (recorde de cada)</option>` + TRACKS.map(t => `<option value="${t.id}">${t.name} (${t.cc})</option>`).join('');
-  sel.value = rkF.track; segSel('rkMode', rkF.mode); segSel('rkItems', rkF.items);
+  sel.value = rkF.track; segSel('rkMode', rkF.mode); segSel('rkItems', rkF.items); segSel('rkKind', rkF.kind);
+  const [kind, laps] = RANK_KIND[rkF.kind];
   const body = $('rkBody'), key = JSON.stringify(rkF); body.dataset.k = key;
   if (!body.innerHTML) body.innerHTML = '<div class="rkmsg">carregando…</div>';
-  RANK.get(rkF.track, { mode: RANK_MODE[rkF.mode], items: RANK_ITEMS[rkF.items] }).then(m => {
+  RANK.get(rkF.track, { mode: RANK_MODE[rkF.mode], items: RANK_ITEMS[rkF.items], kind, laps }).then(m => {
     if (body.dataset.k !== key) return;
     if (rkF.track === 'all') {
       const rows = TRACKS.map(t => ({ t, e: m.all[t.id] }));
-      body.innerHTML = `<table class="rktable"><tr><th>PISTA</th><th>RECORDE</th><th>PILOTO</th><th></th><th>JOGADORES</th></tr>` + rows.map(({ t, e }) =>
+      body.innerHTML = `<table class="rktable"><tr><th>PISTA</th><th>RECORDE · ${kindLabel(kind, laps)}</th><th>PILOTO</th><th></th><th>JOGADORES</th></tr>` + rows.map(({ t, e }) =>
         `<tr class="trk ${e && e.me ? 'me' : ''}" data-id="${t.id}"><td>${t.name}</td><td class="t">${e ? fmt(e.time) : '—'}</td><td>${e ? esc(e.name) : '<span style="opacity:.5">sem tempos</span>'}</td><td>${e ? rankTags(e) : ''}</td><td>${e ? e.total : 0}</td></tr>`).join('') + '</table>';
       body.querySelectorAll('tr.trk').forEach(tr => tr.onclick = () => { rkF.track = tr.dataset.id; renderRankScreen(); });
     } else {
       const d = TRACKS.find(t => t.id === rkF.track);
       body.innerHTML = !m.list.length ? `<div class="rkmsg">Nenhum tempo em ${esc(d.name)} com esse filtro ainda. Seja o primeiro!</div>` :
-        `<table class="rktable"><tr><th>#</th><th>PILOTO</th><th>MELHOR VOLTA</th><th></th><th>KART</th><th>DATA</th></tr>` + m.list.map((e, i) =>
+        `<table class="rktable"><tr><th>#</th><th>PILOTO</th><th>${kind === 'race' ? 'TEMPO DA CORRIDA' : 'MELHOR VOLTA'}</th><th></th><th>KART</th><th>DATA</th></tr>` + m.list.map((e, i) =>
           `<tr class="${e.me ? 'me' : ''}"><td class="pos">${i + 1}º</td><td>${esc(e.name)}</td><td class="t">${fmt(e.time)}</td><td>${rankTags(e)}</td><td>${(CARS[e.car] || CARS[0]).name}</td><td>${e.date ? new Date(e.date).toLocaleDateString('pt-BR') : ''}</td></tr>`).join('') + '</table>' +
           (m.pos && m.pos > 10 ? `<div class="rkmsg" style="padding:10px;color:#ffd400">Você: ${m.pos}º de ${m.total} · ${fmt(m.mine)}</div>` : `<div class="rkmsg" style="padding:10px">${m.total} jogador${m.total > 1 ? 'es' : ''} nesta pista com esse filtro</div>`);
     }
@@ -3767,6 +3882,7 @@ function renderRankScreen() {
 $('rkTrack').onchange = () => { rkF.track = $('rkTrack').value; renderRankScreen(); };
 document.querySelectorAll('#rkMode button').forEach(b => b.onclick = () => { rkF.mode = +b.dataset.v; renderRankScreen(); });
 document.querySelectorAll('#rkItems button').forEach(b => b.onclick = () => { rkF.items = +b.dataset.v; renderRankScreen(); });
+document.querySelectorAll('#rkKind button').forEach(b => b.onclick = () => { rkF.kind = +b.dataset.v; renderRankScreen(); });
 $('rkRefresh').onclick = () => renderRankScreen();
 
 /* =========================================================
@@ -3927,7 +4043,7 @@ $('cOk').onclick = () => {
 };
 
 /* ---------- sala ---------- */
-function mpLivery() { const l = LIVERIES.find(x => x.id === selLivery); return l && isUnlocked(l) ? selLivery : 'padrao'; }
+function mpLivery() { const id = livFor(Net.myCar), l = LIVERIES.find(x => x.id === id); return l && isUnlocked(l) ? id : 'padrao'; }
 const amAdmin = () => Net.room && Net.room.admin === Net.id;
 function renderRoom() {
   const r = Net.room; if (!r) return;
@@ -4026,7 +4142,7 @@ $('sMaxP').onclick = () => sendSettings({ max: Math.min(8, Net.room.settings.max
 function roomCar(d) { Net.myCar = (Net.myCar + d + CARS.length) % CARS.length; Sound.ui.move(); netSend('car', { car: Net.myCar, livery: mpLivery() }); renderRoom(); }
 function roomLivery(d) {
   const ok = LIVERIES.filter(l => isUnlocked(l)); let i = ok.findIndex(l => l.id === mpLivery());
-  selLivery = ok[(i + d + ok.length) % ok.length].id; store.set('livery', selLivery); Sound.ui.move(); netSend('car', { car: Net.myCar, livery: mpLivery() }); renderRoom();
+  setLiv(Net.myCar, ok[(i + d + ok.length) % ok.length].id); Sound.ui.move(); netSend('car', { car: Net.myCar, livery: mpLivery() }); renderRoom();
 }
 $('rCarPrev').onclick = () => roomCar(-1); $('rCarNext').onclick = () => roomCar(1);
 $('rLivPrev').onclick = () => roomLivery(-1); $('rLivNext').onclick = () => roomLivery(1);
@@ -4155,7 +4271,7 @@ function onScreen(name) {
 
 /*__NET_END__*/
 function onLap(k, lt) { if (mode === 'tt' && k.isPlayer) ttLap(k, lt); if (k.isPlayer && !k.ghost) rankLap(k, lt); }
-function onFinish(k) { if (mode === 'mp') netFinish(k); }
+function onFinish(k) { if (k.isPlayer && !k.ghost) rankRace(k); if (mode === 'mp') netFinish(k); }
 function netCountdownTime(t) { return mode === 'mp' ? netCdTime(t) : t; }
 function netRaceTime(t) { return mode === 'mp' ? netRaceT(t) : t; }
 function endRace() {
