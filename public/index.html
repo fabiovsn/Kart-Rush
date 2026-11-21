@@ -129,6 +129,8 @@
   .rktable th { text-align: left; font: 13px 'Lilita One', sans-serif; letter-spacing: 1px; color: #ffd400; font-weight: normal; padding: 4px 8px; position: sticky; top: 0; background: #241650; }
   .rktable td { padding: 6px 8px; border-top: 1px solid rgba(255,255,255,.08); }
   .rktable tr.me td { color: #ffd400; } .rktable td.pos { width: 40px; font-weight: bold; } .rktable td.t { font-variant-numeric: tabular-nums; font-weight: bold; }
+  .rktable th.sortable { cursor: pointer; text-decoration: underline dotted rgba(255,212,0,.5); } .rktable th.sorted { color: #fff; } .rktable td.dim { opacity: .55; font-weight: normal; }
+  .rkhint { font-size: 13px; opacity: .65; padding: 8px 6px 0; }
   .rktable tr.trk { cursor: pointer; } .rktable tr.trk:hover td { background: rgba(255,255,255,.06); }
   .rktag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.12); margin-right: 4px; white-space: nowrap; }
   .rkmsg { opacity: .75; padding: 24px 6px; text-align: center; }
@@ -392,7 +394,7 @@
 <section class="scr" id="scr-title">
   <img class="logoimg" alt="Kart Rush">
   <div class="press pop" id="pressStart">PRESSIONE ENTER</div>
-  <div id="ver">v1.3</div>
+  <div id="ver">v1.4</div>
 </section>
 
 <section class="scr shade-left" id="scr-main">
@@ -403,7 +405,7 @@
     <button class="mi" data-act="tt"><b>CONTRA O RELÓGIO</b><small>Sozinho contra o seu fantasma · medalhas</small></button>
     <button class="mi" data-act="mp"><b>MULTIJOGADOR</b><small>Salas online com até 8 karts</small></button>
     <button class="mi" data-act="random"><b>CORRIDA ALEATÓRIA</b><small>Sorteia o carro e a pista</small></button>
-    <button class="mi" data-act="rank"><b>RANKING</b><small>Melhores voltas de cada pista</small></button>
+    <button class="mi" data-act="rank"><b>RANKING</b><small>Melhores tempos de cada pista</small></button>
     <button class="mi" data-act="help"><b>COMO JOGAR</b><small>Controles e dicas</small></button>
   </nav>
 </section>
@@ -540,7 +542,7 @@
   <div class="rkwrap panel">
     <div class="rkfilters">
       <div class="opt"><span>PISTA</span><select class="inp" id="rkTrack"></select></div>
-      <div class="opt"><span>TEMPO</span><div class="seg" id="rkKind"><button data-v="0">MELHOR VOLTA</button><button data-v="1">CORRIDA 1 VOLTA</button><button data-v="2">CORRIDA 3 VOLTAS</button><button data-v="3">CORRIDA 5 VOLTAS</button></div></div>
+      <div class="opt"><span>VOLTAS</span><select class="inp" id="rkLaps" style="min-width:170px"><option value="0">Todas</option><option value="1">1 volta</option><option value="3">3 voltas</option><option value="5">5 voltas</option></select></div>
       <div class="opt"><span>MODO</span><div class="seg" id="rkMode"><button data-v="0">GERAL</button><button data-v="1">SOLO</button><button data-v="2">MULTIJOGADOR</button></div></div>
       <div class="opt"><span>ITENS</span><div class="seg" id="rkItems"><button data-v="0">TODOS</button><button data-v="1">SEM ITENS</button><button data-v="2">COM ITENS</button></div></div>
     </div>
@@ -586,7 +588,7 @@
     </table>
     <p>Quem está atrás ganha mais turbo, motor e pneus; quem está na frente, mais óleo e escudo. A barra no topo mostra quanto falta de motor e pneus.<br>
     <b>Obstáculos</b> (só com itens, sempre num lado da pista — o outro fica livre): cones, barris, cavaletes e placas voam quando atingidos e o kart perde um pouco; tire wall faz bater e voltar; barreira de concreto não deixa passar; poças de óleo fazem rodar.<br>
-    <b>Ranking online:</b> toda volta completada por você entra sozinha no ranking da pista (bots não entram). No solo, escolha em NOME se aparece com o seu nome ou com o nome do piloto do carro; no multijogador vale o nome da sala. Corridas completadas também registram o tempo total (separado por 1, 3 ou 5 voltas). O menu RANKING mostra os 10 melhores de cada pista, com filtros por tempo (melhor volta ou corrida), modo (solo / multijogador) e itens.</p>
+    <b>Ranking online:</b> toda volta completada por você entra sozinha no ranking da pista (bots não entram). No solo, escolha em NOME se aparece com o seu nome ou com o nome do piloto do carro; no multijogador vale o nome da sala. Corridas completadas registram também o tempo total. O menu RANKING mostra os 10 melhores de cada pista numa tabela com tempo total, melhor volta e nº de voltas, com filtros por voltas (todas, 1, 3 ou 5), modo (solo / multijogador) e itens; com o nº de voltas escolhido, clique em TEMPO TOTAL ou MELHOR VOLTA para mudar a ordem.</p>
     </div>
     </div>
     <p style="font-family:system-ui,sans-serif;font-size:10px;opacity:.55;margin:4px 0">Créditos 3D: kart "Modular Go-kart" por Jungle Jim (sketchfab.com/jungle_jim, CC BY 4.0) · pilotos criados pelo Fábio (Tripo) · árvores, pedras, cones, barreiras e tire wall enviados pelo Fábio · arbustos e flores Stylized Nature MegaKit por Quaternius (CC0) · texturas de pista e pneus a partir de modelos de sketchfab.com/HY2245 · cactos e rochas do deserto: "racing heroes - dust bowl" por amogusstrikesback2 (CC BY 4.0) · sons Kenney (CC0).</p>
@@ -678,7 +680,7 @@ const TEX_LIST = ["drv_f_albedo", "drv_f_mask", "drv_f_normal", "drv_m_albedo", 
 </script>
 <script>
 /* =========================================================
-   KART RUSH — v1.3
+   KART RUSH — v1.4
    Workflow de games · HTML/JS + Three.js (r128), arquivo único
    - 24 pistas da F1 (traçado real) + Kart Point; corrida, campeonato, contra o relógio, multijogador
    - corrida limpa ou com itens (caixas, obstáculos, óleo, escudo, turbo, motor, pneus); ranking online
@@ -854,7 +856,7 @@ function store0(k) { try { return JSON.parse(localStorage.getItem('kartrush_' + 
 function b64ToBuf(b64) { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
 // Os modelos/texturas vêm embutidos em base64 (arquivo único kart_rush.html) ou, na versão do servidor,
 // como arquivos separados em assets/, textures/ e audio/ (mais leve, com cache e progresso de carregamento)
-const ASSET_V = '?v=1.3';   // muda a cada versão: o servidor guarda modelos/texturas em cache por 1 dia, isso força baixar os novos
+const ASSET_V = '?v=1.4';   // muda a cada versão: o servidor guarda modelos/texturas em cache por 1 dia, isso força baixar os novos
 let loadDone = 0, loadTotal = 0;
 const loadTick = () => { loadDone++; const el = $('pressStart'); if (el && !assetsReady && loadTotal > 1) el.textContent = `CARREGANDO... ${Math.round(loadDone / loadTotal * 100)}%`; };
 function assetSources() {
@@ -3695,8 +3697,9 @@ const RANK = (() => {
     put: (track, time, car, name, items, kind = 'lap', laps = 0) => req('rankPut', { track, time, car, name, items, kind, laps }),
   };
 })();
-const RANK_MODE = ['all', 'solo', 'mp'], RANK_ITEMS = ['all', 'without', 'with'], RANK_KIND = [['lap', 0], ['race', 1], ['race', 3], ['race', 5]];
-const kindLabel = (kind, laps) => kind === 'race' ? `CORRIDA · ${laps} VOLTA${laps > 1 ? 'S' : ''}` : 'MELHOR VOLTA';
+const RANK_MODE = ['all', 'solo', 'mp'], RANK_ITEMS = ['all', 'without', 'with'];
+const fmtR = t => t ? fmt(t) : '—';
+const lapsTxt = n => n ? `${n} volta${n > 1 ? 's' : ''}` : '—';
 const rankTags = e => `<span class="rktag">${e.mode === 'mp' ? 'MULTIJOGADOR' : 'SOLO'}</span><span class="rktag">${e.items ? 'COM ITENS' : 'SEM ITENS'}</span>`;
 // nome usado no ranking
 let rankAs = store.get('rankAs') === 1 ? 1 : store.get('rankAs') === 0 ? 0 : (store.get('mpName') ? 0 : 1);   // 0 = seu nome, 1 = piloto do carro
@@ -3727,7 +3730,7 @@ function rankLap(k, lt) {
   if (!T.def || !(lt < rankRaceBest)) return;
   rankRaceBest = lt; rankPending++;
   const id = T.def.id, name = rankName(k);
-  RANK.put(id, lt, k.carIdx, name, !!raceItems).then(m => { rankLast = m; }).catch(() => { rankLast = rankLast || { offline: true }; })
+  RANK.put(id, lt, k.carIdx, name, !!raceItems, 'lap', CONFIG.LAPS).then(m => { rankLast = m; }).catch(() => { rankLast = rankLast || { offline: true }; })
     .finally(() => { rankPending--; if (rankSent) rankShow(); });
 }
 function rankRace(k) {   // corrida completada (todas as voltas, cruzando a linha): tempo total
@@ -3743,8 +3746,8 @@ function rankShow() {
   if (rankPending && (!m || m.offline)) { el.innerHTML = '<span style="opacity:.75">Enviando para o ranking online…</span>'; return; }
   if (!m || m.offline) { el.innerHTML = '<span style="opacity:.75">Ranking online indisponível (sem conexão com o servidor).</span>'; return; }
   const r = rankLastRace, posTxt = x => x.pos ? `<b style="color:#ffd400">${x.pos}º</b> de ${x.total} (${fmt(x.mine)})` : '';
-  el.innerHTML = `RANKING ONLINE · ${esc(T.def.name)} · como <b>${esc(m.name)}</b> — volta: ${m.improved ? 'nova melhor sua! ' : ''}${posTxt(m)}` +
-    (r && !r.offline ? ` · corrida (${r.laps} volta${r.laps > 1 ? 's' : ''}): ${r.improved ? 'novo melhor tempo seu! ' : ''}${posTxt(r)}` : '');
+  el.innerHTML = `RANKING ONLINE · ${esc(T.def.name)} · como <b>${esc(m.name)}</b> — melhor volta: ${m.improved ? 'nova melhor sua! ' : ''}${posTxt(m)}` +
+    (r && !r.offline ? ` · tempo total (${lapsTxt(r.laps)}): ${r.improved ? 'novo melhor tempo seu! ' : ''}${posTxt(r)}` : '');
 }
 function rankSubmit() {   // chamado ao abrir o resultado: as voltas já foram enviadas durante a corrida
   if (rankSent || !player) return; rankSent = true; rankShow();
@@ -3755,41 +3758,47 @@ function showTrackRank(id) {
   if (!id || id === RANDOM) { el.innerHTML = '<h4>RECORDE ONLINE</h4><div style="opacity:.75">Escolha uma pista para ver o recorde.</div>'; return; }
   el.innerHTML = '<h4>RECORDE ONLINE</h4><div style="opacity:.75">carregando…</div>'; el.dataset.id = id;
   const L = CONFIG.LAPS;
-  Promise.all([RANK.get(id, { n: 1 }), RANK.get(id, { n: 1, kind: 'race', laps: L })]).then(([m, mr]) => {
+  Promise.all([RANK.get(id, { n: 1 }), RANK.get(id, { n: 1, laps: L, sort: 'total' })]).then(([m, mr]) => {
     if (el.dataset.id !== id) return;
-    const line = (lbl, e) => `<div><span style="opacity:.7">${lbl}:</span> ${e ? `<b style="font-size:16px">${fmt(e.time)}</b> · ${esc(e.name)} ${rankTags(e)}` : '<span style="opacity:.6">sem tempos ainda</span>'}</div>`;
-    el.innerHTML = '<h4>RECORDE ONLINE</h4>' + line('Volta', m.list[0]) + line(`Corrida (${L} volta${L > 1 ? 's' : ''})`, mr.list[0]);
+    const line = (lbl, e, t) => `<div><span style="opacity:.7">${lbl}:</span> ${e ? `<b style="font-size:16px">${fmt(t)}</b> · ${esc(e.name)} ${rankTags(e)}` : '<span style="opacity:.6">sem tempos ainda</span>'}</div>`;
+    el.innerHTML = '<h4>RECORDE ONLINE</h4>' + line('Melhor volta', m.list[0], m.list[0] && m.list[0].lap) + line(`Tempo total (${lapsTxt(L)})`, mr.list[0], mr.list[0] && mr.list[0].total);
   }).catch(() => { if (el.dataset.id === id) el.innerHTML = '<h4>RECORDE ONLINE</h4><div style="opacity:.75">Sem conexão com o servidor do Kart Rush (abra o jogo pelo endereço do servidor).</div>'; });
 }
-// tela RANKING
-const rkF = { track: 'all', mode: 0, items: 0, kind: 0 };
+// tela RANKING: uma tabela com tempo total, melhor volta e nº de voltas; filtro de voltas (Todas / 1 / 3 / 5),
+// modo e itens. Com um nº de voltas escolhido, clique em TEMPO TOTAL ou MELHOR VOLTA para ordenar;
+// em "Todas" a ordem é pela melhor volta (tempos de corrida com nº de voltas diferente não se comparam)
+const rkF = { track: 'all', mode: 0, items: 0, laps: 0, sort: 'total' };
 function renderRankScreen() {
   const sel = $('rkTrack');
   if (!sel.options.length) sel.innerHTML = `<option value="all">Todas as pistas (recorde de cada)</option>` + TRACKS.map(t => `<option value="${t.id}">${t.name} (${t.cc})</option>`).join('');
-  sel.value = rkF.track; segSel('rkMode', rkF.mode); segSel('rkItems', rkF.items); segSel('rkKind', rkF.kind);
-  const [kind, laps] = RANK_KIND[rkF.kind];
+  sel.value = rkF.track; $('rkLaps').value = rkF.laps; segSel('rkMode', rkF.mode); segSel('rkItems', rkF.items);
+  const sort = rkF.laps ? rkF.sort : 'lap';
   const body = $('rkBody'), key = JSON.stringify(rkF); body.dataset.k = key;
   if (!body.innerHTML) body.innerHTML = '<div class="rkmsg">carregando…</div>';
-  RANK.get(rkF.track, { mode: RANK_MODE[rkF.mode], items: RANK_ITEMS[rkF.items], kind, laps }).then(m => {
+  const th = (s, lbl) => rkF.laps ? `<th class="sortable ${sort === s ? 'sorted' : ''}" data-sort="${s}">${lbl}${sort === s ? ' ▲' : ''}</th>` : `<th class="${sort === s ? 'sorted' : ''}">${lbl}${sort === s ? ' ▲' : ''}</th>`;
+  const tcols = e => `<td class="t ${sort === 'total' ? '' : 'dim'}">${fmtR(e.total)}</td><td class="t ${sort === 'lap' ? '' : 'dim'}">${fmtR(e.lap)}</td><td>${lapsTxt(e.laps)}</td>`;
+  const hint = rkF.laps ? '<div class="rkhint">Clique em TEMPO TOTAL ou MELHOR VOLTA para mudar a ordem.</div>' : '<div class="rkhint">Em "Todas", a ordem é pela melhor volta. Escolha o nº de voltas para comparar o tempo total.</div>';
+  RANK.get(rkF.track, { mode: RANK_MODE[rkF.mode], items: RANK_ITEMS[rkF.items], laps: rkF.laps, sort }).then(m => {
     if (body.dataset.k !== key) return;
     if (rkF.track === 'all') {
       const rows = TRACKS.map(t => ({ t, e: m.all[t.id] }));
-      body.innerHTML = `<table class="rktable"><tr><th>PISTA</th><th>RECORDE · ${kindLabel(kind, laps)}</th><th>PILOTO</th><th></th><th>JOGADORES</th></tr>` + rows.map(({ t, e }) =>
-        `<tr class="trk ${e && e.me ? 'me' : ''}" data-id="${t.id}"><td>${t.name}</td><td class="t">${e ? fmt(e.time) : '—'}</td><td>${e ? esc(e.name) : '<span style="opacity:.5">sem tempos</span>'}</td><td>${e ? rankTags(e) : ''}</td><td>${e ? e.total : 0}</td></tr>`).join('') + '</table>';
+      body.innerHTML = `<table class="rktable"><tr><th>PISTA</th><th>PILOTO</th>${th('total', 'TEMPO TOTAL')}${th('lap', 'MELHOR VOLTA')}<th>VOLTAS</th><th></th><th>JOGADORES</th></tr>` + rows.map(({ t, e }) =>
+        `<tr class="trk ${e && e.me ? 'me' : ''}" data-id="${t.id}"><td>${t.name}</td>` + (e ? `<td>${esc(e.name)}</td>${tcols(e)}<td>${rankTags(e)}</td><td>${e.count}</td>` : `<td colspan="6" style="opacity:.5">sem tempos</td>`) + '</tr>').join('') + '</table>' + hint;
       body.querySelectorAll('tr.trk').forEach(tr => tr.onclick = () => { rkF.track = tr.dataset.id; renderRankScreen(); });
     } else {
       const d = TRACKS.find(t => t.id === rkF.track);
       body.innerHTML = !m.list.length ? `<div class="rkmsg">Nenhum tempo em ${esc(d.name)} com esse filtro ainda. Seja o primeiro!</div>` :
-        `<table class="rktable"><tr><th>#</th><th>PILOTO</th><th>${kind === 'race' ? 'TEMPO DA CORRIDA' : 'MELHOR VOLTA'}</th><th></th><th>KART</th><th>DATA</th></tr>` + m.list.map((e, i) =>
-          `<tr class="${e.me ? 'me' : ''}"><td class="pos">${i + 1}º</td><td>${esc(e.name)}</td><td class="t">${fmt(e.time)}</td><td>${rankTags(e)}</td><td>${(CARS[e.car] || CARS[0]).name}</td><td>${e.date ? new Date(e.date).toLocaleDateString('pt-BR') : ''}</td></tr>`).join('') + '</table>' +
-          (m.pos && m.pos > 10 ? `<div class="rkmsg" style="padding:10px;color:#ffd400">Você: ${m.pos}º de ${m.total} · ${fmt(m.mine)}</div>` : `<div class="rkmsg" style="padding:10px">${m.total} jogador${m.total > 1 ? 'es' : ''} nesta pista com esse filtro</div>`);
+        `<table class="rktable"><tr><th>#</th><th>PILOTO</th>${th('total', 'TEMPO TOTAL')}${th('lap', 'MELHOR VOLTA')}<th>VOLTAS</th><th></th><th>KART</th><th>DATA</th></tr>` + m.list.map((e, i) =>
+          `<tr class="${e.me ? 'me' : ''}"><td class="pos">${i + 1}º</td><td>${esc(e.name)}</td>${tcols(e)}<td>${rankTags(e)}</td><td>${(CARS[e.car] || CARS[0]).name}</td><td>${e.date ? new Date(e.date).toLocaleDateString('pt-BR') : ''}</td></tr>`).join('') + '</table>' +
+          (m.pos && m.pos > 10 ? `<div class="rkmsg" style="padding:10px;color:#ffd400">Você: ${m.pos}º de ${m.total} · ${fmt(m.mine)}</div>` : `<div class="rkmsg" style="padding:10px">${m.total} jogador${m.total > 1 ? 'es' : ''} nesta pista com esse filtro</div>`) + hint;
     }
+    body.querySelectorAll('th.sortable').forEach(h => h.onclick = () => { rkF.sort = h.dataset.sort; renderRankScreen(); });
   }).catch(() => { if (body.dataset.k === key) body.innerHTML = '<div class="rkmsg">Sem conexão com o servidor do Kart Rush.<br>O ranking funciona quando o jogo é aberto pelo endereço do servidor.</div>'; });
 }
 $('rkTrack').onchange = () => { rkF.track = $('rkTrack').value; renderRankScreen(); };
+$('rkLaps').onchange = () => { rkF.laps = +$('rkLaps').value; renderRankScreen(); };
 document.querySelectorAll('#rkMode button').forEach(b => b.onclick = () => { rkF.mode = +b.dataset.v; renderRankScreen(); });
 document.querySelectorAll('#rkItems button').forEach(b => b.onclick = () => { rkF.items = +b.dataset.v; renderRankScreen(); });
-document.querySelectorAll('#rkKind button').forEach(b => b.onclick = () => { rkF.kind = +b.dataset.v; renderRankScreen(); });
 $('rkRefresh').onclick = () => renderRankScreen();
 
 /* =========================================================
