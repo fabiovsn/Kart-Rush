@@ -1,8 +1,9 @@
-// Kart Rush v1.4 — servidor multijogador
+// Kart Rush v1.5 — servidor multijogador
 //  - serve o jogo (public/index.html) e o WebSocket em /ws
 //  - salas: lista, criar, entrar (com senha opcional), sair, admin expulsa / configura / inicia
 //  - corrida: grid com humanos + bots (completa até 8), largada sincronizada pelo relógio do servidor,
 //    retransmissão do estado de cada kart (~20x/s), bandeirada, resultado final e volta para a sala
+//  - campeonato multijogador (opção da sala): 2 a 5 pistas escolhidas ou sorteadas, pontos por corrida, pódio no fim
 //  - itens (opção da sala): retransmite os efeitos (óleo na pista, escudo) para todos da corrida
 //  - ranking online por pista: uma tabela com tempo total, melhor volta e nº de voltas de cada jogador (filtro por voltas),
 //    separados por modo (solo / multijogador) e itens (com / sem);
@@ -16,6 +17,8 @@ const MAX_KARTS = 8, MAX_ROOMS = 60, CARS = 8;
 const CAR_NAMES = ['Relâmpago', 'Faísca', 'Abelha', 'Ametista', 'Tornado', 'Akpetinha', 'Foguete', 'Cometa'];
 const DIFF = [[0.8, 0.86], [0.88, 0.95], [0.96, 1.01]];
 const LAPS = [1, 3, 5];
+const CUP_PTS = [10, 8, 6, 5, 4, 3, 2, 1], CUP_MIN = 2, CUP_MAX = 5;   // campeonato multijogador: pontos por posição, 2 a 5 pistas
+const trackOk = t => typeof t === 'string' && /^[a-z0-9-]{2,20}$/.test(t);
 // ---------- ranking online ----------
 // RANK[pista] = [{ cid, name, car, mode: 'solo'|'mp', items: bool, laps, total, lap, date }]
 //   um registro por jogador+nome+modo+itens+nº de voltas da corrida:
@@ -162,12 +165,20 @@ function send(c, type, data = {}) { if (c.ws.readyState === 1) c.ws.send(JSON.st
 function roomPublic(r) {
   const host = r.players.find(p => p.id === r.admin);
   return { id: r.id, name: r.name, host: host ? host.name : '', track: r.settings.track, laps: r.settings.laps, fill: r.settings.fill, items: !!r.settings.items,
-           count: r.players.length, max: r.settings.max, state: r.state, locked: !!r.password };
+           count: r.players.length, max: r.settings.max, state: r.state, locked: !!r.password,
+           cup: r.settings.cup.on ? { n: r.settings.cup.n, race: r.cup ? r.cup.race : 0, run: !!r.cup } : null };
 }
 function roomFull(r) {
   return { ...roomPublic(r), admin: r.admin, settings: r.settings,
            members: r.players.map(p => ({ id: p.id, name: p.name, car: p.car, livery: p.livery, ready: p.ready, ping: p.ping })),
-           chat: r.chat.slice(-40) };
+           chat: r.chat.slice(-40),
+           cupRun: r.cup ? { ids: r.cup.ids, race: r.cup.race, table: cupTable(r) } : null, lastCup: r.lastCup || null };
+}
+// classificação do campeonato: pontos, depois vitórias, depois melhor última corrida
+function cupTable(r) {
+  const C = r.cup || r.lastCupRaw; if (!C) return [];
+  return Object.keys(C.info).map(id => ({ id, ...C.info[id], pts: C.pts[id] || 0, wins: C.wins[id] || 0, last: C.last[id] || 99 }))
+    .sort((a, b) => b.pts - a.pts || b.wins - a.wins || a.last - b.last);
 }
 function broadcastRooms() { const list = [...rooms.values()].map(roomPublic); for (const c of clients) if (!c.room) send(c, 'rooms', { list }); }
 function broadcastRoom(r) { const room = roomFull(r); for (const p of r.players) send(p, 'room', { room }); }
@@ -175,8 +186,14 @@ function sys(r, text) { r.chat.push({ sys: true, text, t: now() }); if (r.chat.l
 function toRoom(r, type, data, except) { const msg = JSON.stringify({ type, ...data }); for (const p of r.players) if (p !== except && p.ws.readyState === 1) p.ws.send(msg); }
 
 function validSettings(s, old) {
-  const o = old || { track: 'random', laps: 3, diff: 1, fill: true, max: 8, items: false };
-  const n = { ...o };
+  const o = old || { track: 'random', laps: 3, diff: 1, fill: true, max: 8, items: false, cup: { on: false, n: 4, random: true, tracks: [] } };
+  const n = { ...o, cup: { ...o.cup } };
+  if (s.cup && typeof s.cup === 'object') {
+    if (typeof s.cup.on === 'boolean') n.cup.on = s.cup.on;
+    if (+s.cup.n >= CUP_MIN && +s.cup.n <= CUP_MAX) n.cup.n = Math.floor(+s.cup.n);
+    if (typeof s.cup.random === 'boolean') n.cup.random = s.cup.random;
+    if (Array.isArray(s.cup.tracks)) n.cup.tracks = s.cup.tracks.slice(0, CUP_MAX).map(t => trackOk(t) ? t : 'kartpoint');
+  }
   if (typeof s.track === 'string' && /^[a-z0-9-]{2,20}$/.test(s.track)) n.track = s.track;
   if (LAPS.includes(+s.laps)) n.laps = +s.laps;
   if ([0, 1, 2].includes(+s.diff)) n.diff = +s.diff;
@@ -214,23 +231,48 @@ function startRace(c, msg) {
   const notReady = r.players.filter(p => p.id !== r.admin && !p.ready);
   if (notReady.length) return send(c, 'error', { msg: `Aguardando: ${notReady.map(p => p.name).join(', ')}` });
   let track = r.settings.track;
-  if (track === 'random') track = typeof msg.track === 'string' && /^[a-z0-9-]{2,20}$/.test(msg.track) ? msg.track : 'kartpoint';
+  if (track === 'random') track = trackOk(msg.track) ? msg.track : 'kartpoint';
   const humans = r.players.map(p => ({ id: p.id, name: p.name, car: p.car, livery: p.livery, bot: false }));
   const nBots = r.settings.fill ? Math.max(0, MAX_KARTS - humans.length) : 0;
-  const bots = [];
-  // bots usam primeiro os carros que nenhum humano escolheu (8 carros = 8 vagas, sem repetir quando possível)
-  const free = [...Array(CARS).keys()].filter(ci => !humans.some(h => h.car === ci)).sort(() => Math.random() - 0.5);
-  for (let i = 0; i < nBots; i++) {
-    const car = free.length ? free.shift() : Math.floor(Math.random() * CARS);
-    bots.push({ id: 'b' + (i + 1), name: CAR_NAMES[car] + (bots.some(b => b.car === car) ? ' ' + (i + 1) : ''), car, livery: 'padrao', bot: true,
-                skill: +rnd(...DIFF[r.settings.diff]).toFixed(3), pers: { aggr: +Math.random().toFixed(2), def: +Math.random().toFixed(2), err: +((0.25 + Math.random() * 0.75) * [1, 0.65, 0.35][r.settings.diff]).toFixed(2) } });
+  // campeonato: na 1ª corrida define as pistas (escolhidas pelo admin ou sorteadas pelo cliente dele) e os bots, que ficam os mesmos até o fim
+  const cs = r.settings.cup;
+  if (cs.on && !r.cup) {
+    const sent = Array.isArray(msg.cupIds) ? msg.cupIds : [];
+    let ids = cs.random || cs.tracks.length < cs.n ? sent : cs.tracks;
+    ids = ids.slice(0, cs.n).filter(trackOk);
+    if (ids.length < cs.n) return send(c, 'error', { msg: cs.random ? 'Não foi possível sortear as pistas.' : `Escolha as ${cs.n} pistas do campeonato.` });
+    r.cup = { ids, race: 0, pts: {}, wins: {}, last: {}, info: {}, bots: null, laps: r.settings.laps };
+    r.lastCup = null; r.lastCupRaw = null;
   }
-  const grid = [...humans, ...bots].sort(() => Math.random() - 0.5);
+  const makeBots = (n, taken) => {
+    const out = [];
+    // bots usam primeiro os carros que nenhum humano escolheu (8 carros = 8 vagas, sem repetir quando possível)
+    const free = [...Array(CARS).keys()].filter(ci => !taken.some(h => h.car === ci)).sort(() => Math.random() - 0.5);
+    for (let i = 0; i < n; i++) {
+      const car = free.length ? free.shift() : Math.floor(Math.random() * CARS);
+      out.push({ id: 'b' + (i + 1), name: CAR_NAMES[car] + (out.some(b => b.car === car) ? ' ' + (i + 1) : ''), car, livery: 'padrao', bot: true,
+                 skill: +rnd(...DIFF[r.settings.diff]).toFixed(3), pers: { aggr: +Math.random().toFixed(2), def: +Math.random().toFixed(2), err: +((0.25 + Math.random() * 0.75) * [1, 0.65, 0.35][r.settings.diff]).toFixed(2) } });
+    }
+    return out;
+  };
+  let bots, grid;
+  if (r.cup) {
+    if (!r.cup.bots) r.cup.bots = makeBots(MAX_KARTS - 1, humans);
+    bots = r.cup.bots.slice(0, nBots);
+    track = r.cup.ids[r.cup.race];
+    // da 2ª corrida em diante quem tem menos pontos larga na frente
+    grid = [...humans, ...bots].sort(() => Math.random() - 0.5);
+    if (r.cup.race > 0) grid.sort((a, b) => (r.cup.pts[a.id] || 0) - (r.cup.pts[b.id] || 0));
+  } else {
+    bots = makeBots(nBots, humans);
+    grid = [...humans, ...bots].sort(() => Math.random() - 0.5);
+  }
   r.state = 'loading';
   r.race = { track, laps: r.settings.laps, diff: r.settings.diff, items: !!r.settings.items, grid, loaded: new Set(), left: new Set(), finish: {}, states: {}, flagAt: null, t0: null, goAt: 0 };
   for (const p of r.players) p.ready = false;
-  sys(r, `Corrida iniciada: ${track}, ${r.settings.laps} volta(s)${r.settings.items ? ', com itens' : ''}`);
-  toRoom(r, 'raceStart', { race: { track, laps: r.race.laps, diff: r.race.diff, items: r.race.items, grid } });
+  const cupMsg = r.cup ? { race: r.cup.race, total: r.cup.ids.length, ids: r.cup.ids } : null;
+  sys(r, (cupMsg ? `Campeonato, corrida ${cupMsg.race + 1} de ${cupMsg.total}: ` : 'Corrida iniciada: ') + `${track}, ${r.settings.laps} volta(s)${r.settings.items ? ', com itens' : ''}`);
+  toRoom(r, 'raceStart', { race: { track, laps: r.race.laps, diff: r.race.diff, items: r.race.items, grid, cup: cupMsg } });
   r.loadTimer = setTimeout(() => beginCountdown(r), 25000);   // quem não carregou em 25 s entra atrasado
   broadcastRooms();
 }
@@ -260,8 +302,22 @@ function endRace(r) {
     return { id: g.id, name: g.name, car: g.car, bot: g.bot, left: R.left.has(g.id), time: f ? f.time : null, best: f ? f.best : (st ? st.best : null), progress: st ? st.progress : -1e9 };
   });
   res.sort((a, b) => (a.left - b.left) || ((a.time === null) - (b.time === null)) || (a.time !== null ? a.time - b.time : b.progress - a.progress));
-  toRoom(r, 'raceEnd', { results: res, track: R.track, laps: R.laps });
+  let cupInfo = null;
+  if (r.cup) {   // soma os pontos (quem saiu da corrida não pontua nela)
+    const C = r.cup;
+    res.forEach((e, i) => {
+      e.pts = e.left ? 0 : (CUP_PTS[i] || 0);
+      C.pts[e.id] = (C.pts[e.id] || 0) + e.pts; C.last[e.id] = i + 1; if (i === 0 && !e.left) C.wins[e.id] = (C.wins[e.id] || 0) + 1;
+      C.info[e.id] = { name: e.name, car: e.car, bot: !!e.bot };
+    });
+    C.race++;
+    const done = C.race >= C.ids.length, table = cupTable(r);
+    cupInfo = { race: C.race, total: C.ids.length, ids: C.ids, table, done };
+    if (done) { r.lastCupRaw = C; r.lastCup = { ids: C.ids, table }; r.cup = null; }
+  }
+  toRoom(r, 'raceEnd', { results: res, track: R.track, laps: R.laps, cup: cupInfo });
   const win = res[0]; if (win) sys(r, `Vitória de ${win.name}!`);
+  if (cupInfo && cupInfo.done && cupInfo.table[0]) sys(r, `🏆 ${cupInfo.table[0].name} é o campeão!`);
   r.lastRace = { track: R.track, items: R.items, laps: R.laps, until: now() + 90000 };   // a última volta pode chegar logo depois da bandeirada
   r.state = 'lobby'; r.race = null;
   broadcastRoom(r); broadcastRooms();
@@ -311,7 +367,9 @@ function onMessage(c, m) {
     case 'ready': if (r && r.state === 'lobby') { c.ready = !!m.v; broadcastRoom(r); } break;
     case 'settings':
       if (r && r.admin === c.id && r.state === 'lobby') {
+        const old = r.settings;
         r.settings = validSettings(m.settings || {}, r.settings);
+        if (r.cup) for (const k of ['track', 'laps', 'diff', 'fill', 'items', 'cup']) r.settings[k] = old[k];   // campeonato em andamento: regras travadas
         if (typeof m.name === 'string' && clean(m.name, 28)) r.name = clean(m.name, 28);
         broadcastRoom(r); broadcastRooms();
       }
@@ -328,6 +386,9 @@ function onMessage(c, m) {
     }
     case 'chat': if (r) { const text = clean(m.text, 120); if (text) { r.chat.push({ name: c.name, text, t: now() }); broadcastRoom(r); } } break;
     case 'start': startRace(c, m); break;
+    case 'cupCancel':
+      if (r && r.admin === c.id && r.state === 'lobby' && r.cup) { r.cup = null; sys(r, 'O admin cancelou o campeonato'); broadcastRoom(r); broadcastRooms(); }
+      break;
     case 'loaded': if (r && r.race) { r.race.loaded.add(c.id); maybeCountdown(r); } break;
     case 'st':   // estado do próprio kart
       if (r && r.race && Array.isArray(m.k) && m.k.length <= 20) {

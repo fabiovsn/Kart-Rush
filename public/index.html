@@ -62,7 +62,7 @@
   .press { position: absolute; bottom: 5%; left: 0; right: 0; text-align: center; font-size: 30px; animation: blink 1.3s infinite; cursor: pointer; }
   #scr-main .logo { position: absolute; top: 7%; left: 6%; font-size: 72px; text-align: left; }
   .mainnav { position: absolute; left: 6%; top: 30%; display: flex; flex-direction: column; gap: 10px; }
-  #mainnav { top: 28%; gap: 7px; } #mainnav .mi { padding: 6px 30px; } #mainnav .mi b { font-size: 25px; } #mainnav .mi small { font-size: 12px; }
+  #mainnav { top: 27%; gap: 5px; } #mainnav .mi { padding: 4px 30px; } #mainnav .mi b { font-size: 22px; } #mainnav .mi small { font-size: 11.5px; }   /* 8 opções: cabem em 720 px (e no celular) */
   .mi { font-family: inherit; text-align: left; color: #fff; background: rgba(255,255,255,.07); border: 0; border-left: 6px solid transparent; padding: 14px 30px; width: 440px; max-width: 86vw; transform: skewX(-8deg); cursor: pointer; transition: transform .15s, background .15s; }
   .mi b { display: block; font-size: 34px; font-weight: normal; text-shadow: 0 2px 0 var(--stroke); }
   .mi small { font-family: system-ui, sans-serif; font-size: 13px; opacity: .78; }
@@ -183,6 +183,14 @@
   .livrow button { font-family: inherit; font-size: 26px; color: #fff; background: none; border: 0; cursor: pointer; padding: 0 6px; }
   .livrow button:hover { color: #ffd400; }
   #livName { min-width: 210px; }
+  .swatches { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 8px auto 2px; max-width: 420px; }
+  .sw { width: 22px; height: 22px; border-radius: 5px; border: 2px solid #1b1035; box-shadow: 0 0 0 1px rgba(255,255,255,.3); cursor: pointer; position: relative; box-sizing: border-box; flex: none; }
+  .sw:hover { transform: scale(1.12); }
+  .sw.on { box-shadow: 0 0 0 3px #ffd400; z-index: 1; }
+  .sw.orig::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1px #1b1035; }
+  .sw.lk { opacity: .45; } .sw.lk::after { content: '🔒'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  body.mobile .sw { width: 30px; height: 30px; border-radius: 7px; } body.mobile .swatches { gap: 6px; max-width: 470px; }
+  body.mobile .sw.lk::after { font-size: 14px; } body.mobile .sw.orig::after { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; }
   #livHow { font-family: system-ui, sans-serif; font-size: 12px; opacity: .8; min-height: 16px; }
   #livHow.lock { color: #ff8a8a; opacity: 1; }
   .cupgrid { position: absolute; top: 116px; bottom: 150px; left: 50%; transform: translateX(-50%); width: min(1080px, 94vw); display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; overflow-y: auto; align-content: start; }
@@ -200,6 +208,7 @@
   #podium .steps3 { display: flex; align-items: flex-end; justify-content: center; gap: 14px; margin: 22px 0 10px; }
   #podium .pd { width: 160px; text-align: center; }
   #podium .pd b { display: block; font-weight: normal; font-size: 22px; margin-bottom: 6px; }
+  #podRest { font-family: system-ui, sans-serif; font-size: 15px; } #podRest table { margin: 0 auto; border-collapse: collapse; } #podRest td { padding: 2px 12px; } #podRest tr.me td { color: #ffd400; }
   #podium .pd div { background: linear-gradient(180deg, #ffd400, #ff7a3b); border: 3px solid #1b1035; border-radius: 10px 10px 0 0; display: flex; align-items: flex-start; justify-content: center; font-size: 46px; padding-top: 8px; color: #1b1035; }
   #notice { position: fixed; top: 3%; left: 0; right: 0; text-align: center; font-size: 34px; z-index: 30; pointer-events: none; opacity: 0; transition: opacity .3s; color: #ffd400; }
   #notice.on { opacity: 1; animation: toastPop .4s ease-out; }
@@ -253,7 +262,29 @@
   #rChat .sys { opacity: .65; font-style: italic; }
   #rChat b { color: #ffd400; font-weight: 600; }
   .rtrack { padding: 12px 16px; }
-  #rMap { width: 100%; height: 130px; object-fit: contain; display: block; }
+  #rMap { width: 44%; height: 96px; object-fit: contain; display: block; flex: none; }
+  #scr-room .rthead { display: flex; align-items: center; gap: 12px; } #scr-room .rtnames { flex: 1; min-width: 0; } #rTrackName { line-height: 1.05; }
+  #scr-room .rsettings::-webkit-scrollbar, #scr-room .cupbox::-webkit-scrollbar { width: 6px; } #scr-room .rsettings::-webkit-scrollbar-thumb, #scr-room .cupbox::-webkit-scrollbar-thumb { background: rgba(255,212,0,.5); border-radius: 3px; }
+  #scr-room .rtrack { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #scr-room .rsettings, #scr-room .cupbox { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; }
+  #scr-room .rcar { flex: none; }
+  .rsettings .cuprow { display: none; } .rsettings.cup .cuprow { display: flex; } .rsettings.cup #sTrackRow { display: none; }
+  .cuptrk { flex-direction: column; gap: 5px; }
+  .cuptrk .frow > span { width: 104px; } .cuptrk select { flex: 1; min-width: 0; font-size: 13px; padding: 3px 6px; }
+  .cupbox { display: none; margin-top: 8px; font-family: system-ui, sans-serif; font-size: 14px; }
+  .cupbox.on { display: block; }
+  .cupbox h4 { margin: 0 0 4px; font: 15px 'Lilita One', sans-serif; letter-spacing: 1px; color: #ffd400; font-weight: normal; }
+  .cupbox ol { margin: 0 0 8px; padding-left: 22px; line-height: 1.5; } .cupbox li.done { opacity: .55; } .cupbox li.next { color: #ffd400; font-weight: 700; }
+  .cupbox table { width: 100%; border-collapse: collapse; } .cupbox td { padding: 2px 6px; border-top: 1px solid rgba(255,255,255,.08); } .cupbox td.pts { text-align: right; font-weight: 700; } .cupbox tr.me td { color: #ffd400; }
+  .cupbox .btn { margin-top: 8px; }
+  .rcar small#rLivName { display: block; margin-top: 2px; }
+  body.mobile #rMap { width: 46%; height: 84px; }
+  body.mobile #scr-room .rtnames { flex: 1; min-width: 0; } body.mobile #rTrackName { font-size: 24px !important; line-height: 1.05; }
+  body.mobile #scr-room .rleft .rcar { padding: 4px 8px 8px; margin: 0 0 2px; background: rgba(255,255,255,.05); border-width: 1px; }
+  body.mobile #rPlayers { flex: 0 1 auto; min-height: 44px; overflow-y: auto; } body.mobile #scr-room .chat { flex: 1 1 60px; min-height: 60px; }
+  body.mobile #scr-room .rcar { padding: 8px 12px; } body.mobile #scr-room .rcar .carpick b { font-size: 26px; } body.mobile #scr-room .rcar .carpick button { font-size: 30px; }
+  body.mobile .carinfo { width: 860px; } body.mobile #livSw { max-width: none; flex-wrap: nowrap; gap: 4px; } body.mobile #livSw .sw { width: 26px; height: 26px; }   /* garagem: uma linha só, não cobre o kart */
+  body.mobile #scr-room .rcar .sw { width: 27px; height: 27px; } body.mobile #scr-room .rcar .swatches { gap: 5px; margin-top: 4px; }
   .rsettings { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; font-size: 14px; }
   .rsettings .frow { margin: 0; flex-wrap: nowrap; } .rsettings .frow > span { width: 104px; flex: none; font-size: 14px; } .rsettings .seg button { font-size: 13px; padding: 5px 9px; }
   .rsettings.ro .seg button:not(.on), .rsettings.ro .stepper button, .rsettings.ro select { pointer-events: none; }
@@ -265,6 +296,7 @@
   .carpick b { font-weight: normal; font-size: 34px; min-width: 190px; }
   .carpick button { font-family: inherit; font-size: 34px; color: #fff; background: none; border: 0; cursor: pointer; }
   .carpick button:hover { color: #ffd400; }
+  body.mobile .carpick button, body.mobile .livrow button { padding: 8px 18px; margin: -8px -10px; touch-action: manipulation; }   /* setas maiores para o dedo, sem mudar o layout */
   #rStart[disabled] { filter: grayscale(.7); opacity: .65; cursor: default; }
   @media (max-width: 760px) and (orientation: portrait) and (pointer: fine) {
     .logo { font-size: 72px; } #scr-title .tag { top: calc(14% + 140px); font-size: 16px; }
@@ -394,7 +426,7 @@
 <section class="scr" id="scr-title">
   <img class="logoimg" alt="Kart Rush">
   <div class="press pop" id="pressStart">PRESSIONE ENTER</div>
-  <div id="ver">v1.4</div>
+  <div id="ver">v1.5</div>
 </section>
 
 <section class="scr shade-left" id="scr-main">
@@ -404,6 +436,7 @@
     <button class="mi" data-act="cup"><b>CAMPEONATO</b><small>4 pistas seguidas, pontos e pódio</small></button>
     <button class="mi" data-act="tt"><b>CONTRA O RELÓGIO</b><small>Sozinho contra o seu fantasma · medalhas</small></button>
     <button class="mi" data-act="mp"><b>MULTIJOGADOR</b><small>Salas online com até 8 karts</small></button>
+    <button class="mi" data-act="mpcup"><b>CAMPEONATO ONLINE</b><small>Multijogador: 2 a 5 pistas, pontos e pódio</small></button>
     <button class="mi" data-act="random"><b>CORRIDA ALEATÓRIA</b><small>Sorteia o carro e a pista</small></button>
     <button class="mi" data-act="rank"><b>RANKING</b><small>Melhores tempos de cada pista</small></button>
     <button class="mi" data-act="help"><b>COMO JOGAR</b><small>Controles e dicas</small></button>
@@ -419,6 +452,7 @@
     <div class="cname pop" id="carName"></div>
     <div id="carStats"></div>
     <div class="livrow"><button id="livPrev">‹</button><span id="livName">PINTURA: ORIGINAL</span><button id="livNext">›</button></div>
+    <div class="swatches" id="livSw"></div>
     <div id="livHow"></div>
     <div class="dots" id="carDots"></div>
   </div>
@@ -469,7 +503,7 @@
 </section>
 
 <section class="scr shade-full" id="scr-mp">
-  <div class="hdr"><h2 class="pop">MULTIJOGADOR</h2></div>
+  <div class="hdr"><h2 class="pop" id="mpTitle">MULTIJOGADOR</h2></div>
   <div class="mpwrap">
     <div class="mpbar panel">
       <label>SEU NOME <input class="inp" id="mpName" maxlength="16" placeholder="Digite seu nome" spellcheck="false"></label>
@@ -487,7 +521,10 @@
     <div class="panel">
       <h3 class="pop">CRIAR SALA</h3>
       <div class="frow"><span>NOME DA SALA</span><input class="inp" id="cName" maxlength="28"></div>
-      <div class="frow"><span>PISTA</span><select class="inp" id="cTrack"></select></div>
+      <div class="frow"><span>MODO</span><div class="seg" id="cMode"><button data-v="0">CORRIDA</button><button data-v="1">CAMPEONATO 🏆</button></div></div>
+      <div class="frow" id="cTrackRow"><span>PISTA</span><select class="inp" id="cTrack"></select></div>
+      <div class="frow ccup"><span>Nº DE PISTAS</span><div class="stepper"><button id="cCupM">−</button><b id="cCupN">4</b><button id="cCupP">+</button></div></div>
+      <div class="frow ccup"><span>PISTAS</span><div class="seg" id="cCupRnd"><button data-v="1">ALEATÓRIAS</button><button data-v="0">ESCOLHER NA SALA</button></div></div>
       <div class="frow"><span>VOLTAS</span><div class="seg" id="cLaps"><button data-v="1">1</button><button data-v="3">3</button><button data-v="5">5</button></div></div>
       <div class="frow"><span>ITENS</span><div class="seg" id="cItems"><button data-v="0">CORRIDA LIMPA</button><button data-v="1">COM ITENS</button></div></div>
       <div class="frow"><span>MÁX. JOGADORES</span><div class="stepper"><button id="cMaxM">−</button><b id="cMax">8</b><button id="cMaxP">+</button></div></div>
@@ -516,22 +553,27 @@
   </div>
   <div class="rright">
     <div class="panel rtrack">
-      <canvas id="rMap" width="420" height="220"></canvas>
-      <div class="tname pop" id="rTrackName" style="font-size:30px"></div>
-      <div class="tsub" id="rTrackSub"></div>
+      <div class="rthead"><canvas id="rMap" width="420" height="220"></canvas>
+      <div class="rtnames"><div class="tname pop" id="rTrackName" style="font-size:27px"></div>
+      <div class="tsub" id="rTrackSub"></div></div></div>
       <div class="rsettings" id="rSettings">
-        <div class="frow"><span>PISTA</span><select class="inp" id="sTrack"></select></div>
+        <div class="frow"><span>MODO</span><div class="seg" id="sMode"><button data-v="0">CORRIDA</button><button data-v="1">CAMPEONATO 🏆</button></div></div>
+        <div class="frow" id="sTrackRow"><span>PISTA</span><select class="inp" id="sTrack"></select></div>
+        <div class="frow cuprow"><span>Nº DE PISTAS</span><div class="stepper"><button id="sCupM">−</button><b id="sCupN">4</b><button id="sCupP">+</button></div></div>
+        <div class="frow cuprow"><span>PISTAS</span><div class="seg" id="sCupRnd"><button data-v="1">ALEATÓRIAS</button><button data-v="0">ESCOLHER</button></div></div>
+        <div class="cuprow cuptrk" id="sCupTracks"></div>
         <div class="frow"><span>VOLTAS</span><div class="seg" id="sLaps"><button data-v="1">1</button><button data-v="3">3</button><button data-v="5">5</button></div></div>
         <div class="frow"><span>BOTS</span><div class="seg" id="sFill"><button data-v="1">COMPLETAR</button><button data-v="0">SEM BOTS</button></div></div>
         <div class="frow"><span>ITENS</span><div class="seg" id="sItems"><button data-v="0">CORRIDA LIMPA</button><button data-v="1">COM ITENS</button></div></div>
         <div class="frow"><span>DIFICULDADE</span><div class="seg" id="sDiff"><button data-v="0">FÁCIL</button><button data-v="1">NORMAL</button><button data-v="2">DIFÍCIL</button></div></div>
         <div class="frow"><span>JOGADORES</span><div class="stepper"><button id="sMaxM">−</button><b id="sMax">8</b><button id="sMaxP">+</button></div></div>
       </div>
+      <div class="cupbox" id="rCupBox"></div>
     </div>
     <div class="panel rcar">
-      <small>SEU CARRO</small>
       <div class="carpick"><button id="rCarPrev">‹</button><b class="pop" id="rCarName"></b><button id="rCarNext">›</button></div>
-      <div class="livrow" style="margin-top:2px"><button id="rLivPrev">‹</button><span id="rLivName"></span><button id="rLivNext">›</button></div>
+      <small id="rLivName"></small>
+      <div class="swatches" id="rLivSw"></div>
     </div>
   </div>
   <div class="foot"><button class="btn ghost" id="rLeave">SAIR DA SALA</button><button class="btn ghost" id="rReady">ESTOU PRONTO</button><button class="btn" id="rStart">INICIAR CORRIDA</button></div>
@@ -588,6 +630,8 @@
     </table>
     <p>Quem está atrás ganha mais turbo, motor e pneus; quem está na frente, mais óleo e escudo. A barra no topo mostra quanto falta de motor e pneus.<br>
     <b>Obstáculos</b> (só com itens, sempre num lado da pista — o outro fica livre): cones, barris, cavaletes e placas voam quando atingidos e o kart perde um pouco; tire wall faz bater e voltar; barreira de concreto não deixa passar; poças de óleo fazem rodar.<br>
+    <b>Campeonato online:</b> no menu CAMPEONATO ONLINE (ou em MODO na sala), o admin escolhe de 2 a 5 pistas — sorteadas ou uma por uma — e cada corrida vale pontos (10, 8, 6, 5, 4, 3, 2, 1). Entre as corridas todos voltam para a sala, que mostra a classificação; quem tem menos pontos larga na frente. No fim, pódio com o nome dos jogadores.<br>
+    <b>Pinturas:</b> toque nos quadradinhos de cor (garagem e sala) para pintar o kart; as com cadeado são desbloqueadas jogando.<br>
     <b>Ranking online:</b> toda volta completada por você entra sozinha no ranking da pista (bots não entram). No solo, escolha em NOME se aparece com o seu nome ou com o nome do piloto do carro; no multijogador vale o nome da sala. Corridas completadas registram também o tempo total. O menu RANKING mostra os 10 melhores de cada pista numa tabela com tempo total, melhor volta e nº de voltas, com filtros por voltas (todas, 1, 3 ou 5), modo (solo / multijogador) e itens; com o nº de voltas escolhido, clique em TEMPO TOTAL ou MELHOR VOLTA para mudar a ordem.</p>
     </div>
     </div>
@@ -656,6 +700,7 @@
     <h1 class="pop" id="podTitle">CAMPEÃO!</h1>
     <div class="pop" id="podSub" style="font-size:20px"></div>
     <div class="steps3" id="podSteps"></div>
+    <div id="podRest"></div>
     <div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="podOk">MENU<kbd>Enter</kbd></button></div>
   </div>
 </div>
@@ -680,7 +725,7 @@ const TEX_LIST = ["drv_f_albedo", "drv_f_mask", "drv_f_normal", "drv_m_albedo", 
 </script>
 <script>
 /* =========================================================
-   KART RUSH — v1.4
+   KART RUSH — v1.5
    Workflow de games · HTML/JS + Three.js (r128), arquivo único
    - 24 pistas da F1 (traçado real) + Kart Point; corrida, campeonato, contra o relógio, multijogador
    - corrida limpa ou com itens (caixas, obstáculos, óleo, escudo, turbo, motor, pneus); ranking online
@@ -856,7 +901,7 @@ function store0(k) { try { return JSON.parse(localStorage.getItem('kartrush_' + 
 function b64ToBuf(b64) { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
 // Os modelos/texturas vêm embutidos em base64 (arquivo único kart_rush.html) ou, na versão do servidor,
 // como arquivos separados em assets/, textures/ e audio/ (mais leve, com cache e progresso de carregamento)
-const ASSET_V = '?v=1.4';   // muda a cada versão: o servidor guarda modelos/texturas em cache por 1 dia, isso força baixar os novos
+const ASSET_V = '?v=1.5';   // muda a cada versão: o servidor guarda modelos/texturas em cache por 1 dia, isso força baixar os novos
 let loadDone = 0, loadTotal = 0;
 const loadTick = () => { loadDone++; const el = $('pressStart'); if (el && !assetsReady && loadTotal > 1) el.textContent = `CARREGANDO... ${Math.round(loadDone / loadTotal * 100)}%`; };
 function assetSources() {
@@ -2749,6 +2794,27 @@ const store = {
 let mode = 'race';   // 'race' | 'cup' | 'tt' | 'mp'
 const LIVERIES = [
   { id: 'padrao', name: 'ORIGINAL' },
+  // cores livres (sempre disponíveis)
+  { id: 'vermelho', name: 'VERMELHO', color: 0xe0262b, helmet: 0xffffff },
+  { id: 'laranja', name: 'LARANJA', color: 0xff7a1a, helmet: 0x1a1a1a },
+  { id: 'amarelo', name: 'AMARELO', color: 0xffd21f, helmet: 0x1a1a1a },
+  { id: 'limao', name: 'LIMÃO', color: 0xa6e22e, helmet: 0x1a1a1a },
+  { id: 'verde', name: 'VERDE', color: 0x1f9e4a, helmet: 0xffffff },
+  { id: 'turquesa', name: 'TURQUESA', color: 0x19c3b0, helmet: 0xffffff },
+  { id: 'celeste', name: 'CELESTE', color: 0x5fb8ff, helmet: 0xffffff },
+  { id: 'azul', name: 'AZUL', color: 0x1f5fe0, helmet: 0xffffff },
+  { id: 'marinho', name: 'AZUL-MARINHO', color: 0x1b2a6b, helmet: 0xffd400 },
+  { id: 'roxo', name: 'ROXO', color: 0x6b3fd1, helmet: 0xffffff },
+  { id: 'rosa', name: 'ROSA', color: 0xff5fa8, helmet: 0xffffff },
+  { id: 'magenta', name: 'MAGENTA', color: 0xd41f8f, helmet: 0xffffff },
+  { id: 'vinho', name: 'VINHO', color: 0x7a1630, helmet: 0xf2e6c8 },
+  { id: 'marrom', name: 'MARROM', color: 0x7a4a26, helmet: 0xf0d8a8 },
+  { id: 'areia', name: 'AREIA', color: 0xd9c29a, helmet: 0x3a2a1a },
+  { id: 'branco', name: 'BRANCO', color: 0xf2f2f2, helmet: 0xe0262b },
+  { id: 'prata', name: 'PRATA', color: 0xb9c0c8, helmet: 0x1a1a1a },
+  { id: 'grafite', name: 'GRAFITE', color: 0x4a4f57, helmet: 0xff7a1a },
+  { id: 'preto', name: 'PRETO', color: 0x141418, helmet: 0xffd400 },
+  // especiais (desbloqueadas jogando)
   { id: 'neon', name: 'NEON', color: 0x39ff6a, helmet: 0x1a1a1a, req: p => p.wins >= 1, how: 'Vença 1 corrida' },
   { id: 'oceano', name: 'OCEANO', color: 0x00b8d4, helmet: 0xffffff, req: p => medalCount(p, 1) >= 3, how: 'Ganhe 3 medalhas no contra o relógio' },
   { id: 'carbono', name: 'CARBONO', color: 0x2c2c33, helmet: 0xff3b3b, req: p => p.podiums >= 5, how: 'Suba ao pódio 5 vezes' },
@@ -2769,6 +2835,19 @@ const livByCar = (() => { const m = store.get('liveries'); return m && typeof m 
 const livFor = ci => (typeof ci !== 'number' || !CARS[ci]) ? 'padrao' : (livByCar[ci] || 'padrao');
 function setLiv(ci, id) { if (typeof ci !== 'number' || !CARS[ci]) return; if (id === 'padrao') delete livByCar[ci]; else livByCar[ci] = id; store.set('liveries', livByCar); }
 let selLivery = livFor(1);
+// quadradinhos de cor das pinturas: el = container, ci = carro (a ORIGINAL mostra a cor do próprio carro),
+// sel = pintura escolhida, pick(id) ao tocar; lockedOk: deixa tocar nas bloqueadas (garagem: só para ver)
+function livSwatches(el, ci, sel, pick, lockedOk) {
+  const p = prog(), key = ci + '|' + sel + '|' + LIVERIES.filter(l => isUnlocked(l, p)).length;
+  if (el._k !== key) {
+    el._k = key;
+    el.innerHTML = LIVERIES.map(l => {
+      const col = '#' + new THREE.Color(l.color || (CARS[ci] || CARS[0]).color).getHexString(), lk = !isUnlocked(l, p);
+      return `<i class="sw${l.id === sel ? ' on' : ''}${lk ? ' lk' : ''}${l.color ? '' : ' orig'}" data-id="${l.id}" style="background:${col}" title="${l.name}${lk ? ' — ' + l.how : ''}"></i>`;
+    }).join('');
+    el.querySelectorAll('.sw').forEach(b => b.onclick = e => { e.stopPropagation(); if (b.classList.contains('lk') && !lockedOk) { notice(LIVERIES.find(l => l.id === b.dataset.id).how.toUpperCase()); return; } pick(b.dataset.id); });
+  }
+}
 let noticeTimer = null;
 function notice(text, delay = 0) { setTimeout(() => { const n = $('notice'); n.textContent = text; n.classList.remove('on'); void n.offsetWidth; n.classList.add('on'); clearTimeout(noticeTimer); noticeTimer = setTimeout(() => n.classList.remove('on'), 2600); Sound.lap(true); }, delay); }
 function addProgress(fn) {
@@ -2838,11 +2917,16 @@ function showPodium() {
   $('podSub').textContent = `${cup.def.name} · ${DIFF_LABEL[difficulty]}`;
   const top = [rows[1], rows[0], rows[2]], h = [110, 160, 80], lbl = ['2º', '1º', '3º'];
   $('podSteps').innerHTML = top.map((r, i) => r ? `<div class="pd"><b class="pop" style="color:${r.e.kind === 'player' ? '#ffd400' : '#fff'}">${r.e.name}<br><small>${r.pts} pts</small></b><div style="height:${h[i]}px">${lbl[i]}</div></div>` : '').join('');
+  $('podRest').innerHTML = ''; $('podOk').firstChild.textContent = 'MENU';
   $('podium').style.display = 'flex'; state = 'podium';
   Sound.fanfare(place === 1);
   if (place <= 3) addProgress(p => { if (place === 1) p.cups++; const prev = p.cupsWon[cup.def.id]; if (!prev || place < prev) p.cupsWon[cup.def.id] = place; });
 }
-$('podOk').onclick = () => { $('podium').style.display = 'none'; cup = null; quitToMenu(); };
+$('podOk').onclick = () => {
+  $('podium').style.display = 'none';
+  if (mode === 'mp') { Net.cupRes = null; netBackToRoom(); return; }   // campeonato multijogador: volta para a sala
+  cup = null; quitToMenu();
+};
 
 // ---- contra o relógio: fantasma e medalhas ----
 // volta de referência por pista (bot sem erros, kart médio, medida por script) — base das medalhas
@@ -3020,7 +3104,11 @@ mainBtns.forEach((b, i) => { b.onmouseenter = () => focusMain(i); b.onclick = ()
 function activateMain(i) {
   const act = mainBtns[i].dataset.act;
   if (act === 'race' || act === 'cup' || act === 'tt') { mode = act; goScreen('car'); }
-  else if (act === 'mp') { mode = 'mp'; goScreen('mp'); askName(); }
+  else if (act === 'mp') { mode = 'mp'; Net.wantCup = false; goScreen('mp'); askName(); }
+  else if (act === 'mpcup') {   // campeonato multijogador: mesma lista de salas, já abrindo "criar sala" no modo campeonato
+    mode = 'mp'; Net.wantCup = true; goScreen('mp');
+    askName(() => { let n = 0; const go = () => { if (state !== 'mp') return; if (Net.ok) openCreate(); else if (++n < 40) setTimeout(go, 250); }; go(); });
+  }
   else if (act === 'help') goScreen('help');
   else if (act === 'rank') goScreen('rank');
   else { mode = 'race'; roulette(RANDOM, RANDOM); }
@@ -3041,6 +3129,8 @@ function renderCar() {
   $('livName').textContent = 'PINTURA: ' + lv.name + (ok ? '' : ' 🔒');
   $('livHow').textContent = ok ? (lv.how ? 'Desbloqueada' : '') : lv.how; $('livHow').classList.toggle('lock', !ok);
   document.querySelector('.livrow').style.visibility = c ? 'visible' : 'hidden';
+  $('livSw').style.display = c ? '' : 'none';
+  if (c) livSwatches($('livSw'), selCar, selLivery, id => { setLiv(selCar, id); Sound.ui.move(); renderCar(); }, true);
   garageLivery = selLivery;
   $('carDots').innerHTML = slots.map((s, i) => `<i class="${i === idx ? 'on' : ''}" data-i="${i}"></i>`).join('');
   $('carDots').querySelectorAll('i').forEach(el => el.onclick = () => { selCar = slots[+el.dataset.i]; renderCar(); });
@@ -3837,6 +3927,7 @@ function netLost() {
   const inRace = mode === 'mp' && !MENU_STATES.includes(state);
   Net.room = null; Net.race = null;
   if (inRace) { $('results').style.display = 'none'; $('pause').style.display = 'none'; }
+  $('podium').style.display = 'none';
   goScreen('mp'); notice('CONEXÃO PERDIDA');
 }
 
@@ -3866,7 +3957,7 @@ function netOn(m) {
       const inRace = !MENU_STATES.includes(state);
       Net.room = null; Net.race = null;
       if (inRace) { $('results').style.display = 'none'; $('pause').style.display = 'none'; Sound.stopRace(); }
-      goScreen('mp'); notice('VOCÊ FOI REMOVIDO DA SALA PELO ADMIN'); break;
+      $('podium').style.display = 'none'; goScreen('mp'); notice('VOCÊ FOI REMOVIDO DA SALA PELO ADMIN'); break;
     }
     case 'error':
       if (m.pw) { Net.joinAfterPw = m.id; $('pwIn').value = ''; $('pwModal').classList.add('on'); setTimeout(() => $('pwIn').focus(), 50); notice(m.msg); }
@@ -3899,8 +3990,9 @@ function renderRooms() {
   if (!Net.rooms.length) { el._h = null; el.innerHTML = `<div class="mpempty">Nenhuma sala aberta no momento.<br>Clique em <b>+ CRIAR SALA</b> e chame os amigos!</div>`; return; }
   const html = Net.rooms.map(r => {
     const full = r.count >= r.max, busy = r.state !== 'lobby', can = !full && !busy;
-    const sit = busy ? '🏁 Em corrida' : full ? 'Cheia' : 'Aguardando';
-    return `<div class="mproom"><div>${r.locked ? '🔒 ' : ''}${esc(r.name)}<small>admin: ${esc(r.host)}</small></div><div>${trackName(r.track)}<small>${r.items ? '🎁 com itens' : 'corrida limpa'}</small></div><div>${r.laps}</div>
+    const sit = busy ? '🏁 Em corrida' : full ? 'Cheia' : r.cup && r.cup.run ? 'Entre corridas' : 'Aguardando';
+    const trk = r.cup ? `🏆 Campeonato · ${r.cup.n} pistas${r.cup.run ? ` (${r.cup.race}/${r.cup.n} feitas)` : ''}` : trackName(r.track);
+    return `<div class="mproom"><div>${r.locked ? '🔒 ' : ''}${esc(r.name)}<small>admin: ${esc(r.host)}</small></div><div>${trk}<small>${r.items ? '🎁 com itens' : 'corrida limpa'}</small></div><div>${r.laps}</div>
       <div>${r.count}/${r.max}<small>${r.fill ? '+ bots até 8' : 'sem bots'}</small></div><div>${sit}</div>
       <div><button class="btn sm" data-id="${r.id}" data-lock="${r.locked ? 1 : 0}" ${can ? '' : 'disabled'}>ENTRAR</button></div></div>`;
   }).join('');
@@ -3941,21 +4033,33 @@ $('nameIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preven
 $('mpName').onchange = () => { const n = mpName(); if (n) { store.set('mpName', n); netSend('name', { name: n }); } };
 // criar sala
 const trackOptions = (sel) => [`<option value="random">Aleatória</option>`, ...TRACKS.map(t => `<option value="${t.id}">${t.name} (${t.cc})</option>`)].join('').replace(`value="${sel}"`, `value="${sel}" selected`);
-let cForm = { laps: 3, max: 8, fill: 1, diff: 1, items: itemsPref ? 1 : 0 };
-$('mpCreate').onclick = () => {
+let cForm = { laps: 3, max: 8, fill: 1, diff: 1, items: itemsPref ? 1 : 0, cup: 0, cupN: 4, cupRnd: 1 };
+function cFormSync() {
+  segSel('cLaps', cForm.laps); segSel('cItems', cForm.items); segSel('cFill', cForm.fill); segSel('cDiff', cForm.diff); $('cMax').textContent = cForm.max;
+  segSel('cMode', cForm.cup); segSel('cCupRnd', cForm.cupRnd); $('cCupN').textContent = cForm.cupN;
+  $('cTrackRow').style.display = cForm.cup ? 'none' : ''; document.querySelectorAll('#mpModal .ccup').forEach(e => e.style.display = cForm.cup ? '' : 'none');
+}
+function openCreate() {
   if (!Net.ok) return mpError('SEM CONEXÃO COM O SERVIDOR');
   const n = needName(); if (!n) return;
-  $('cName').value = `Sala de ${n}`; $('cTrack').innerHTML = trackOptions('random'); $('cPass').value = '';
-  segSel('cLaps', cForm.laps); segSel('cItems', cForm.items); segSel('cFill', cForm.fill); segSel('cDiff', cForm.diff); $('cMax').textContent = cForm.max;
-  $('mpModal').classList.add('on'); setTimeout(() => $('cName').select(), 50);
-};
-for (const [id, key] of [['cLaps', 'laps'], ['cItems', 'items'], ['cFill', 'fill'], ['cDiff', 'diff']]) document.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => { cForm[key] = +b.dataset.v; segSel(id, cForm[key]); });
+  if (Net.wantCup !== undefined) cForm.cup = Net.wantCup ? 1 : 0;
+  $('cName').value = cForm.cup ? `Campeonato de ${n}` : `Sala de ${n}`; $('cTrack').innerHTML = trackOptions('random'); $('cPass').value = '';
+  cFormSync(); $('mpModal').classList.add('on'); setTimeout(() => $('cName').select(), 50);
+}
+$('mpCreate').onclick = openCreate;
+for (const [id, key] of [['cLaps', 'laps'], ['cItems', 'items'], ['cFill', 'fill'], ['cDiff', 'diff'], ['cMode', 'cup'], ['cCupRnd', 'cupRnd']]) document.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => {
+  const was = cForm.cup; cForm[key] = +b.dataset.v; cFormSync();
+  if (key === 'cup' && was !== cForm.cup) { const nm = $('cName').value, n = mpName(); if (nm === `Sala de ${n}` || nm === `Campeonato de ${n}`) $('cName').value = cForm.cup ? `Campeonato de ${n}` : `Sala de ${n}`; }
+});
+$('cCupM').onclick = () => { cForm.cupN = Math.max(2, cForm.cupN - 1); cFormSync(); };
+$('cCupP').onclick = () => { cForm.cupN = Math.min(5, cForm.cupN + 1); cFormSync(); };
 $('cMaxM').onclick = () => { cForm.max = Math.max(2, cForm.max - 1); $('cMax').textContent = cForm.max; };
 $('cMaxP').onclick = () => { cForm.max = Math.min(8, cForm.max + 1); $('cMax').textContent = cForm.max; };
 $('cCancel').onclick = () => $('mpModal').classList.remove('on');
 $('cOk').onclick = () => {
   netSend('create', { name: $('cName').value, password: $('cPass').value, car: Net.myCar, livery: mpLivery(),
-                      settings: { track: $('cTrack').value, laps: cForm.laps, max: cForm.max, fill: !!cForm.fill, diff: cForm.diff, items: !!cForm.items } });
+                      settings: { track: $('cTrack').value, laps: cForm.laps, max: cForm.max, fill: !!cForm.fill, diff: cForm.diff, items: !!cForm.items,
+                                  cup: { on: !!cForm.cup, n: cForm.cupN, random: !!cForm.cupRnd, tracks: [] } } });
 };
 
 /* ---------- sala ---------- */
@@ -3992,18 +4096,45 @@ function renderRoom() {
   const ch = $('rChat'), atBottom = ch.scrollTop + ch.clientHeight >= ch.scrollHeight - 8;
   const chHtml = r.chat.map(c => c.sys ? `<div class="sys">${esc(c.text)}</div>` : `<div><b>${esc(c.name)}:</b> ${esc(c.text)}</div>`).join('');
   if (ch._h !== chHtml) { ch._h = chHtml; ch.innerHTML = chHtml; if (atBottom) ch.scrollTop = ch.scrollHeight; }
-  // pista e regras
-  $('rTrackName').textContent = trackName(st.track).toUpperCase();
-  const d = TRACKS.find(t => t.id === st.track);
-  $('rTrackSub').textContent = (d ? `${d.country} · ${TYPE_LABEL[d.type]} · ${st.laps} volta${st.laps > 1 ? 's' : ''}` : `Sorteada na largada · ${st.laps} volta${st.laps > 1 ? 's' : ''}`) + (st.items ? ' · com itens' : ' · corrida limpa');
-  drawRoomMap(st.track);
-  const rs = $('rSettings'); rs.classList.toggle('ro', !adm);
+  // pista e regras (no campeonato: a próxima pista e a classificação)
+  const cs = st.cup || { on: false, n: 4, random: true, tracks: [] }, run = r.cupRun, rules = ` · ${st.laps} volta${st.laps > 1 ? 's' : ''}` + (st.items ? ' · com itens' : ' · corrida limpa');
+  let mapId = st.track;
+  if (run) {
+    mapId = run.ids[run.race];
+    $('rTrackName').textContent = trackName(mapId).toUpperCase();
+    $('rTrackSub').textContent = `🏆 Campeonato · corrida ${run.race + 1} de ${run.ids.length}` + rules;
+  } else if (cs.on) {
+    mapId = cs.random ? 'random' : cupTracks(cs)[0];
+    $('rTrackName').textContent = 'CAMPEONATO 🏆';
+    $('rTrackSub').textContent = `${cs.n} pistas ${cs.random ? 'sorteadas na largada' : 'escolhidas'}` + rules + (r.lastCup && r.lastCup.table[0] ? ` · último campeão: ${r.lastCup.table[0].name}` : '');
+  } else {
+    $('rTrackName').textContent = trackName(st.track).toUpperCase();
+    const d = TRACKS.find(t => t.id === st.track);
+    $('rTrackSub').textContent = (d ? `${d.country} · ${TYPE_LABEL[d.type]}` : 'Sorteada na largada') + rules;
+  }
+  drawRoomMap(mapId);
+  const rs = $('rSettings'); rs.classList.toggle('ro', !adm); rs.classList.toggle('cup', !!cs.on); rs.style.display = run ? 'none' : '';
+  segSel('sMode', cs.on ? 1 : 0); $('sCupN').textContent = cs.n; segSel('sCupRnd', cs.random ? 1 : 0);
+  const ct = $('sCupTracks'), ids = cupTracks(cs), ctKey = (cs.random ? 'r' : ids.join(',')) + (adm ? 'a' : '');
+  if (ct._k !== ctKey) {
+    ct._k = ctKey;
+    ct.innerHTML = cs.random ? '' : ids.map((id, i) => `<div class="frow"><span>${i + 1}ª CORRIDA</span><select class="inp" data-i="${i}" ${adm ? '' : 'disabled'}>${TRACKS.map(t => `<option value="${t.id}"${t.id === id ? ' selected' : ''}>${t.name} (${t.cc})</option>`).join('')}</select></div>`).join('');
+    ct.querySelectorAll('select').forEach(sl => sl.onchange = () => { const a = cupTracks(Net.room.settings.cup).slice(); a[+sl.dataset.i] = sl.value; sendSettings({ cup: Object.assign({}, Net.room.settings.cup, { tracks: a }) }); });
+  }
+  const cb = $('rCupBox'); cb.classList.toggle('on', !!run);
+  if (run) {
+    const me = Net.id, cbHtml = `<h4>CAMPEONATO · CORRIDA ${run.race + 1} DE ${run.ids.length}</h4><ol>` + run.ids.map((id, i) => `<li class="${i < run.race ? 'done' : i === run.race ? 'next' : ''}">${i < run.race ? '✓ ' : i === run.race ? '▶ ' : ''}${trackName(id)}</li>`).join('') + '</ol>' +
+      (run.table.length ? '<h4>CLASSIFICAÇÃO</h4><table>' + run.table.map((e, i) => `<tr class="${e.id === me ? 'me' : ''}"><td>${i + 1}º</td><td>${esc(e.name)}${e.bot ? ' 🤖' : ''}</td><td class="pts">${e.pts} pts</td></tr>`).join('') + '</table>' : '') +
+      (adm ? '<button class="btn sm ghost" id="rCupCancel">CANCELAR CAMPEONATO</button>' : '');
+    if (cb._h !== cbHtml) { cb._h = cbHtml; cb.innerHTML = cbHtml; const bc = $('rCupCancel'); if (bc) bc.onclick = () => { if (bc.dataset.arm) netSend('cupCancel'); else { bc.dataset.arm = 1; bc.textContent = 'CONFIRMAR CANCELAMENTO?'; } }; }
+  } else { cb._h = ''; cb.innerHTML = ''; }
   if ($('sTrack').dataset.v !== st.track || !$('sTrack').options.length) { $('sTrack').innerHTML = trackOptions(st.track); $('sTrack').dataset.v = st.track; }
   $('sTrack').disabled = !adm;
   segSel('sLaps', st.laps); segSel('sFill', st.fill ? 1 : 0); segSel('sDiff', st.diff); segSel('sItems', st.items ? 1 : 0); $('sMax').textContent = st.max;
   // carro
   const car = CARS[Net.myCar]; $('rCarName').textContent = car.name.toUpperCase();
   const lv = LIVERIES.find(l => l.id === mpLivery()); $('rLivName').textContent = 'PINTURA: ' + lv.name;
+  livSwatches($('rLivSw'), Net.myCar, mpLivery(), id => { setLiv(Net.myCar, id); Sound.ui.move(); netSend('car', { car: Net.myCar, livery: mpLivery() }); renderRoom(); }, false);
   if (garageLivery !== mpLivery() || !garageCar || garageCar.userData.carIdx !== Net.myCar) { garageLivery = mpLivery(); showGarageCar(Net.myCar); garageCar.userData.carIdx = Net.myCar; }
   // botões
   const others = r.members.filter(p => p.id !== r.admin), readyN = others.filter(p => p.ready).length;
@@ -4012,7 +4143,8 @@ function renderRoom() {
   $('rStart').style.display = adm ? '' : 'none';
   const allReady = readyN === others.length;
   $('rStart').disabled = !allReady;
-  $('rStart').innerHTML = allReady ? 'INICIAR CORRIDA<kbd>Enter</kbd>' : `AGUARDANDO PRONTOS (${readyN}/${others.length})`;
+  const goTxt = run ? `PRÓXIMA CORRIDA (${run.race + 1}/${run.ids.length})` : cs.on ? 'INICIAR CAMPEONATO' : 'INICIAR CORRIDA';
+  $('rStart').innerHTML = allReady ? goTxt + '<kbd>Enter</kbd>' : `AGUARDANDO PRONTOS (${readyN}/${others.length})`;
 }
 function drawRoomMap(id, cid = 'rMap') {
   const c = $(cid), g = c.getContext('2d'), W = c.width, H = c.height;
@@ -4061,12 +4193,18 @@ function roomLivery(d) {
   setLiv(Net.myCar, ok[(i + d + ok.length) % ok.length].id); Sound.ui.move(); netSend('car', { car: Net.myCar, livery: mpLivery() }); renderRoom();
 }
 $('rCarPrev').onclick = () => roomCar(-1); $('rCarNext').onclick = () => roomCar(1);
-$('rLivPrev').onclick = () => roomLivery(-1); $('rLivNext').onclick = () => roomLivery(1);
+// campeonato: pistas escolhidas (completa com pistas diferentes quando faltam)
+function cupTracks(cs) { const a = (cs.tracks || []).slice(0, cs.n); for (const t of TRACKS) { if (a.length >= cs.n) break; if (!a.includes(t.id)) a.push(t.id); } return a; }
+document.querySelectorAll('#sMode button').forEach(b => b.onclick = () => sendSettings({ cup: Object.assign({}, Net.room.settings.cup, { on: b.dataset.v === '1' }) }));
+document.querySelectorAll('#sCupRnd button').forEach(b => b.onclick = () => { const c = Net.room.settings.cup; sendSettings({ cup: Object.assign({}, c, { random: b.dataset.v === '1', tracks: cupTracks(c) }) }); });
+$('sCupM').onclick = () => { const c = Net.room.settings.cup; sendSettings({ cup: Object.assign({}, c, { n: Math.max(2, c.n - 1) }) }); };
+$('sCupP').onclick = () => { const c = Net.room.settings.cup; sendSettings({ cup: Object.assign({}, c, { n: Math.min(5, c.n + 1), tracks: cupTracks(Object.assign({}, c, { n: Math.min(5, c.n + 1) })) }) }); };
 $('rReady').onclick = () => { const me = Net.room.members.find(p => p.id === Net.id); netSend('ready', { v: !(me && me.ready) }); Sound.ui.ok(); };
 $('rStart').onclick = () => {
   if ($('rStart').disabled) return;
-  const st = Net.room.settings; Sound.ui.ok();
-  netSend('start', { track: st.track === 'random' ? pick(TRACKS).id : st.track });
+  const st = Net.room.settings, cs = st.cup; Sound.ui.ok();
+  const cupIds = cs && cs.on && !Net.room.cupRun ? (cs.random ? [...TRACKS].sort(() => Math.random() - 0.5).slice(0, cs.n).map(t => t.id) : cupTracks(cs)) : undefined;
+  netSend('start', { track: st.track === 'random' ? pick(TRACKS).id : st.track, cupIds });
 };
 $('rLeave').onclick = () => { netSend('leave'); Sound.ui.back(); };
 $('rChatIn').onkeydown = e => { if (e.key === 'Enter') { const t = e.target.value.trim(); if (t) netSend('chat', { text: t }); e.target.value = ''; } };
@@ -4074,7 +4212,8 @@ $('rChatIn').onkeydown = e => { if (e.key === 'Enter') { const t = e.target.valu
 /* ---------- corrida ---------- */
 function netStartRace(race) {
   const myAdmin = amAdmin();
-  Net.race = Object.assign(race, { t0: null, goAt: 4, myAdmin }); Net.buf = {}; Net.results = null; Net.sendT = 0;
+  Net.race = Object.assign(race, { t0: null, goAt: 4, myAdmin }); Net.buf = {}; Net.results = null; Net.cupRes = null; Net.sendT = 0;
+  $('podium').style.display = 'none';
   const def = TRACKS.find(t => t.id === race.track) || TRACKS[0];
   CONFIG.LAPS = race.laps; difficulty = race.diff; mode = 'mp'; cup = null;
   const spec = race.grid.map(g => ({ car: g.car, livery: g.livery, id: g.id, name: g.id === Net.id ? (mpName() || 'Você') : g.name, bot: g.bot,
@@ -4144,7 +4283,7 @@ function netFinish(k) {
   if (k.isPlayer || (k.kind === 'bot' && Net.race.myAdmin)) netSend('finish', { id: k.id, time: k.finishTime, best: k.lapTimes.length ? Math.min(...k.lapTimes) : null });
 }
 function netRaceEnd(m) {
-  Net.results = m.results;
+  Net.results = m.results; Net.cupRes = m.cup || null;
   if (!Net.race) return;
   if (state === 'race' || state === 'countdown') { if (!player.finished) { player.finished = true; player.finishTime = raceTime; } state = 'race'; endRace(); resultsTimer = 0.6; }
   else if (state === 'done') { /* já está nos resultados */ }
@@ -4153,22 +4292,38 @@ function showNetResults() {
   const res = Net.results, myIdx = res ? res.findIndex(r => r.id === Net.id) : standings().indexOf(player);
   const place = myIdx + 1;
   $('resTitle').textContent = res ? (place === 1 ? 'VITÓRIA!' : `${place}º LUGAR`) : 'CHEGADA!';
-  $('resTrack').textContent = `${T.def.name} · ${CONFIG.LAPS} volta${CONFIG.LAPS > 1 ? 's' : ''} · ${Net.room ? Net.room.name : 'Multijogador'}`;
+  const C = Net.cupRes, rc = Net.race && Net.race.cup;
+  $('resTrack').textContent = rc ? `🏆 CAMPEONATO · CORRIDA ${rc.race + 1} DE ${rc.total} · ${T.def.name}` : `${T.def.name} · ${CONFIG.LAPS} volta${CONFIG.LAPS > 1 ? 's' : ''} · ${Net.room ? Net.room.name : 'Multijogador'}`;
   const rows = res || standings().map(k => ({ id: k.id, name: k.name, time: k.finished ? k.finishTime : null, best: k.lapTimes.length ? Math.min(...k.lapTimes) : null, left: !!k.gone, bot: k.kind === 'bot' || k.isBotNet }));
   const w = rows[0];
-  $('resTable').innerHTML = '<tr style="opacity:.7;font-size:15px"><td></td><td>PILOTO</td><td>TEMPO</td><td>MELHOR VOLTA</td></tr>' + rows.map((r, i) => {
+  $('resTable').innerHTML = `<tr style="opacity:.7;font-size:15px"><td></td><td>PILOTO</td><td>TEMPO</td><td>MELHOR VOLTA</td>${C ? '<td>PONTOS</td>' : ''}</tr>` + rows.map((r, i) => {
     const time = r.left ? 'SAIU' : r.time !== null && r.time !== undefined ? (i === 0 || !w.time ? fmt(r.time) : '+' + (r.time - w.time).toFixed(3) + 's') : (res ? 'NÃO TERMINOU' : 'NA PISTA');
-    return `<tr class="${r.id === Net.id ? 'me' : ''}"><td>${i + 1}º</td><td>${esc(r.name)}${r.bot ? ' 🤖' : ''}</td><td>${time}</td><td>${r.best ? fmt(r.best) : '—'}</td></tr>`;
+    return `<tr class="${r.id === Net.id ? 'me' : ''}"><td>${i + 1}º</td><td>${esc(r.name)}${r.bot ? ' 🤖' : ''}</td><td>${time}</td><td>${r.best ? fmt(r.best) : '—'}</td>${C ? `<td>+${r.pts || 0}</td>` : ''}</tr>`;
   }).join('');
-  $('resCup').innerHTML = '';
+  $('resCup').innerHTML = C ? `<h3 class="pop">CLASSIFICAÇÃO${C.done ? ' FINAL' : ` · ${C.race} DE ${C.total}`}</h3><table id="resTable" style="font-size:20px">` + C.table.map((e, i) => `<tr class="${e.id === Net.id ? 'me' : ''}"><td>${i + 1}º</td><td>${esc(e.name)}${e.bot ? ' 🤖' : ''}</td><td>${e.pts} pts</td></tr>`).join('') + '</table>' : '';
+  $('roomBtn').firstChild.textContent = C && C.done ? 'VER PÓDIO' : 'VOLTAR À SALA';
   $('resExtra').textContent = res ? '' : 'AGUARDANDO OS OUTROS PILOTOS…';
   $('roomBtn').disabled = !res; $('roomBtn').style.opacity = res ? 1 : 0.5;
 }
 function netBackToRoom() {
   if (!Net.results) return;
+  if (Net.cupRes && Net.cupRes.done && $('podium').style.display !== 'flex') { showNetPodium(); return; }   // fim do campeonato: pódio antes da sala
   $('results').style.display = 'none'; Net.race = null; Sound.stopRace();
   for (const k of karts) k.mesh.visible = false;
   if (Net.room) goScreen('room'); else goScreen('mp');
+}
+// pódio do campeonato multijogador: nomes dos jogadores (bots marcados) e o resto da classificação embaixo
+function showNetPodium() {
+  const C = Net.cupRes, rows = C.table, place = rows.findIndex(e => e.id === Net.id) + 1;
+  $('results').style.display = 'none';
+  $('podTitle').textContent = place === 1 ? 'CAMPEÃO!' : place ? `${place}º NO CAMPEONATO` : 'FIM DO CAMPEONATO';
+  $('podSub').textContent = `${Net.room ? Net.room.name : 'Campeonato multijogador'} · ${C.total} pista${C.total > 1 ? 's' : ''}`;
+  const top = [rows[1], rows[0], rows[2]], h = [110, 160, 80], lbl = ['2º', '1º', '3º'];
+  $('podSteps').innerHTML = top.map((e, i) => e ? `<div class="pd"><b class="pop" style="color:${e.id === Net.id ? '#ffd400' : '#fff'}">${esc(e.name)}${e.bot ? ' 🤖' : ''}<br><small>${e.pts} pts</small></b><div style="height:${h[i]}px">${lbl[i]}</div></div>` : '').join('');
+  $('podRest').innerHTML = rows.length > 3 ? '<table>' + rows.slice(3).map((e, i) => `<tr class="${e.id === Net.id ? 'me' : ''}"><td>${i + 4}º</td><td>${esc(e.name)}${e.bot ? ' 🤖' : ''}</td><td>${e.pts} pts</td></tr>`).join('') + '</table>' : '';
+  $('podOk').firstChild.textContent = 'VOLTAR À SALA';
+  $('podium').style.display = 'flex'; state = 'podium';
+  Sound.fanfare(place === 1);
 }
 function netLeaveRace() {
   netSend('leave'); Net.race = null; Net.room = null;
@@ -4177,6 +4332,7 @@ function netLeaveRace() {
 }
 function onScreen(name) {
   if (name === 'mp') {
+    $('mpTitle').textContent = Net.wantCup ? 'CAMPEONATO MULTIJOGADOR' : 'MULTIJOGADOR';
     $('mpName').value = store.get('mpName') || ''; if (!$('mpUrl').value) $('mpUrl').value = Net.url || netDefaultUrl();
     if (!Net.ok && (!Net.ws || Net.ws.readyState > 1)) netConnect($('mpUrl').value.trim());
     else if (Net.ok) netSend('list');
@@ -4281,6 +4437,8 @@ function playerInput() {
 const TOUCH = { l: false, r: false, g: false, b: false, d: false };
 if (IS_MOBILE) {
   document.body.classList.add('mobile');
+  // sala no celular: carro e pintura vão para o painel da esquerda (no da direita ficam só as regras, sem rolar e sem cobrir os botões)
+  { const rl = document.querySelector('#scr-room .rleft'); rl.insertBefore(document.querySelector('#scr-room .rcar'), $('rCount')); }
   const btns = { l: $('tbL'), r: $('tbR'), g: $('tbG'), b: $('tbB'), d: $('tbD') };
   let rects = null;
   const measure = () => { rects = {}; for (const k in btns) rects[k] = btns[k].getBoundingClientRect(); };
