@@ -1,4 +1,4 @@
-// Kart Rush v1.5 — servidor multijogador
+// Kart Rush v1.6 — servidor multijogador
 //  - serve o jogo (public/index.html) e o WebSocket em /ws
 //  - salas: lista, criar, entrar (com senha opcional), sair, admin expulsa / configura / inicia
 //  - corrida: grid com humanos + bots (completa até 8), largada sincronizada pelo relógio do servidor,

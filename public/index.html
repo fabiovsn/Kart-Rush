@@ -336,7 +336,36 @@
   body.mobile #scr-room .rleft { width: 470px; } body.mobile #scr-room .rright { width: 450px; }   /* vw encolhe com o zoom: larguras fixas */
   body.mobile .cupgrid { width: 1080px; } body.mobile .mpwrap { width: 1060px; } body.mobile .modal .panel { width: 560px; } body.mobile .carinfo { max-width: none; }
   body.mobile canvas#game { touch-action: none; }
-  body.mobile .help { max-height: 92%; overflow-y: auto; width: 1100px; max-width: 96%; }
+  /* ---- responsividade no celular (o zoom de cada tela é escolhido em fitScreens) ---- */
+  body.mobile .mpwrap { width: min(1060px, calc(100% - 32px)); } body.mobile .cupgrid { width: min(1080px, calc(100% - 24px)); }
+  body.mobile #scr-main .logoimg { top: 4%; }
+  body.mobile #mainnav { top: calc(4% + 156px); }
+  body.mobile #scr-room .rleft { width: min(470px, 47%); } body.mobile #scr-room .rright { width: min(450px, 45%); }
+  body.mobile.lowh .cfgtrack canvas { display: none; } body.mobile.lowh .cfgtrack { padding-bottom: 8px; }
+  /* garagem no celular: kart à esquerda (a câmera desloca a imagem), painel à direita, setas dos lados do kart */
+  body.mobile #scr-car .carinfo { left: auto; right: 2.5%; transform: none; bottom: 88px; width: 560px; padding: 12px 22px 12px; }
+  body.mobile #scr-car .hdr { right: 50%; } body.mobile #scr-car .hdr h2 { font-size: 34px; }
+  body.mobile #scr-car .arrow { top: auto; bottom: 46%; font-size: 92px; } body.mobile #scr-car .arrow.left { left: 2%; } body.mobile #scr-car .arrow.right { right: auto; left: calc(50% - 64px); }
+  body.mobile #scr-car .cname { font-size: 50px; margin: 0 0 4px; } body.mobile #scr-car #livSw { flex-wrap: wrap; max-width: 520px; }
+  /* telas título / conteúdo / botões: em coluna no celular (nada se sobrepõe; só a lista rola se faltar espaço) */
+  body.mobile #scr-track.on, body.mobile #scr-config.on, body.mobile #scr-cup.on, body.mobile #scr-rank.on, body.mobile #scr-mp.on, body.mobile #scr-roulette.on { display: flex; flex-direction: column; align-items: center; padding: 56px 3% 12px; box-sizing: border-box; gap: 10px; }
+  body.mobile #scr-track > :not(.modal), body.mobile #scr-config > :not(.modal), body.mobile #scr-cup > :not(.modal), body.mobile #scr-rank > :not(.modal), body.mobile #scr-mp > :not(.modal), body.mobile #scr-roulette > :not(.modal) { position: relative; top: auto; bottom: auto; left: auto; right: auto; transform: none; flex: none; }
+  body.mobile #scr-track .hdr, body.mobile #scr-config .hdr, body.mobile #scr-cup .hdr, body.mobile #scr-rank .hdr, body.mobile #scr-mp .hdr, body.mobile #scr-roulette .hdr { width: 100%; }
+  body.mobile #scr-track .foot, body.mobile #scr-config .foot, body.mobile #scr-cup .foot, body.mobile #scr-rank .foot, body.mobile #scr-mp .foot { width: 100%; box-sizing: border-box; margin-top: auto; padding-bottom: 6px; }
+  body.mobile #scr-track .tracklayout { flex: 1 1 auto; min-height: 0; width: 100%; }
+  body.mobile #scr-config .cfgwrap { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+  body.mobile #scr-cup .cupgrid { flex: 1 1 auto; min-height: 0; }
+  body.mobile #scr-rank .rkwrap { flex: 1 1 auto; min-height: 0; }
+  body.mobile #scr-mp .mpwrap { flex: 1 1 auto; min-height: 0; }
+  body.mobile .rkwrap { width: min(940px, 100%); } body.mobile .cfgwrap { width: min(860px, 100%); } body.mobile #scr-roulette .slots { margin: auto 0; }
+  body.mobile.lowh #mainnav .mi small { display: none; } body.mobile.lowh #mainnav .mi { padding: 7px 30px; } body.mobile.lowh #mainnav { gap: 6px; }
+  body.mobile .cfgopts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; } body.mobile .cfgopts .opt:first-child { grid-column: 1 / -1; }
+  body.mobile .cfgopts .opt > span { width: 112px; font-size: 16px; flex: none; } body.mobile .cfgopts .opt { gap: 10px; }
+  body.mobile .cfgtrack canvas { width: 190px; height: 100px; } body.mobile .cfgwrap { padding: 16px 24px; } body.mobile .cfgopts { margin-top: 12px; }
+  body.mobile .help > .row:last-child { position: sticky; bottom: -12px; margin: 0 -26px -12px; padding: 8px 0 10px; justify-content: center; background: linear-gradient(rgba(18,10,45,0), rgba(18,10,45,.96) 35%); }
+  body.mobile.narrow #cdHint { right: 136px; font-size: 13px; }
+  body.mobile.cd.hudtight #tbC, body.mobile.cd.hudtight #tbP { visibility: hidden; }   /* na largada as luzes ocupam o meio do topo */
+  body.mobile .help { max-height: 90%; overflow-y: auto; width: 1100px; max-width: 96%; }
   body.mobile .help table:not(.hitems) { display: none; }   /* teclas não se aplicam no celular */
   body.mobile #best { top: 112px; left: max(14px, env(safe-area-inset-left)); font-size: 13px; }
   body.mobile { touch-action: manipulation; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
@@ -374,7 +403,7 @@
   body.mobile #banner { font-size: 20px; top: 20%; }
   body.mobile #toast { font-size: 18px; top: 26.5%; }   /* avisos no alto e menores: não cobrem a pista */
   body.mobile #warn { font-size: 26px; }
-  body.mobile #cdHint { top: 64px; font-size: 15px; }
+  body.mobile #cdHint { top: 76px; font-size: 15px; }
   body.mobile #lights { top: 8px; gap: 6px; padding: 6px 9px; }
   body.mobile #lights i { width: 22px; height: 22px; }
   #rotate { display: none; position: fixed; inset: 0; z-index: 60; background: #120a2a; color: #fff; align-items: center; justify-content: center; flex-direction: column; gap: 18px; font-size: 26px; text-align: center; padding: 24px; }
@@ -426,7 +455,7 @@
 <section class="scr" id="scr-title">
   <img class="logoimg" alt="Kart Rush">
   <div class="press pop" id="pressStart">PRESSIONE ENTER</div>
-  <div id="ver">v1.5</div>
+  <div id="ver">v1.6</div>
 </section>
 
 <section class="scr shade-left" id="scr-main">
@@ -725,7 +754,7 @@ const TEX_LIST = ["drv_f_albedo", "drv_f_mask", "drv_f_normal", "drv_m_albedo", 
 </script>
 <script>
 /* =========================================================
-   KART RUSH — v1.5
+   KART RUSH — v1.6
    Workflow de games · HTML/JS + Three.js (r128), arquivo único
    - 24 pistas da F1 (traçado real) + Kart Point; corrida, campeonato, contra o relógio, multijogador
    - corrida limpa ou com itens (caixas, obstáculos, óleo, escudo, turbo, motor, pneus); ranking online
@@ -901,7 +930,7 @@ function store0(k) { try { return JSON.parse(localStorage.getItem('kartrush_' + 
 function b64ToBuf(b64) { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
 // Os modelos/texturas vêm embutidos em base64 (arquivo único kart_rush.html) ou, na versão do servidor,
 // como arquivos separados em assets/, textures/ e audio/ (mais leve, com cache e progresso de carregamento)
-const ASSET_V = '?v=1.5';   // muda a cada versão: o servidor guarda modelos/texturas em cache por 1 dia, isso força baixar os novos
+const ASSET_V = '?v=1.6';   // muda a cada versão: o servidor guarda modelos/texturas em cache por 1 dia, isso força baixar os novos
 let loadDone = 0, loadTotal = 0;
 const loadTick = () => { loadDone++; const el = $('pressStart'); if (el && !assetsReady && loadTotal > 1) el.textContent = `CARREGANDO... ${Math.round(loadDone / loadTotal * 100)}%`; };
 function assetSources() {
@@ -3055,6 +3084,9 @@ function garageCamera(dt) {
   const aimY = state === 'title' ? 3.2 : state === 'car' ? -0.9 : state === 'room' ? 1.6 : 1.2;   // desloca o carro na tela
   camera.position.set(Math.sin(garageSpin * 0.15) * 1.5 + side, carLike ? 4.2 : 3.4, carLike ? 11.5 : 10.5);
   camera.lookAt(side * 0.9, aimY, 0);
+  // celular na escolha do carro: a imagem anda para a esquerda (o painel fica à direita)
+  if (IS_MOBILE && state === 'car') { const w = VW(), h = VH(); camera.lookAt(0, 1.1, 0); camera.setViewOffset(w, h, Math.round(w * 0.24), 0, w, h); }
+  else if (camera.view && camera.view.enabled) camera.clearViewOffset();
   if (Math.abs(camera.fov - 40) > 0.1) { camera.fov = 40; camera.updateProjectionMatrix(); }
 }
 
@@ -4431,6 +4463,118 @@ function playerInput() {
 }
 
 
+/* ---------- Ajuste das telas no celular ----------
+   Cada tela (e cada janela/resultado aberto) recebe o maior zoom em que TODOS os botões ficam dentro da tela
+   e sem nada por cima (teste de toque no centro de cada um). Listas compridas rolam dentro do próprio painel.
+   Se nem no zoom mínimo couber, a tela passa a rolar. */
+const FIT = { k: '', zmin: 0.42, zread: 0.5, natural: '.tlist, .mplist, .rkbody, #rPlayers, .chat, .help, .rsettings, .cupbox, .cuptrk, #resTableWrap' };
+document.addEventListener('animationend', e => { if (e.target.classList && e.target.classList.contains('scr')) { FIT.k = ''; fitScreens(); } }, true);
+const FIT_SEL = 'button, select, input, textarea, .sw, .cup, tr.trk, .mproom, .ti, .mi, .seg button, .dots i, th.sortable';
+function fitTargets() {
+  const t = [], s = document.querySelector('.scr.on');
+  if (s) t.push(s);
+  for (const id of ['results', 'podium', 'pause']) { const e = $(id); if (e && e.style.display && e.style.display !== 'none') t.push(e); }
+  document.querySelectorAll('.modal.on').forEach(m => t.push(m));
+  return t;
+}
+function fitVisible(el) {
+  const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return null;
+  if (+getComputedStyle(el).opacity < 0.05) return null;   // (a opacidade da tela anima na entrada: só a do próprio elemento conta)
+  for (let a = el; a && a !== document.body; a = a.parentElement) { const c = getComputedStyle(a); if (c.display === 'none' || c.visibility === 'hidden') return null; }
+  return r;
+}
+function fitScroller(el, stop) {   // painel com rolagem que contém o elemento (dentro da tela)
+  for (let a = el.parentElement; a && a !== stop; a = a.parentElement) {
+    const c = getComputedStyle(a);
+    if (/(auto|scroll)/.test(c.overflowY + c.overflowX) && (a.scrollHeight > a.clientHeight + 1 || a.scrollWidth > a.clientWidth + 1)) return a;
+  }
+  return null;
+}
+const fitNo = (why, el, by) => { FIT.why = why + ' ' + (el.id || el.className) + ' ' + (el.textContent || '').trim().slice(0, 20) + (by ? ' por ' + (by.id || by.className) : ''); return false; };
+function fitOk(t, strict) {
+  const F = t.getBoundingClientRect(), tol = 0.5, rot = ROT90(), Hh = r => rot ? r.width : r.height;
+  const inF = r => r.left >= F.left - tol && r.top >= F.top - tol && r.right <= F.right + tol && r.bottom <= F.bottom + tol;
+  const hits = (el, x, y) => { const h = document.elementFromPoint(x, y); return h && (h === el || el.contains(h) || h.contains(el)); };
+  for (const el of t.querySelectorAll(FIT_SEL)) {
+    const r = fitVisible(el); if (!r) continue;
+    const sc = fitScroller(el, t);
+    if (sc) {   // dentro de lista com rolagem: basta o painel caber; testa só os que estão à vista
+      const sr = sc.getBoundingClientRect(); if (!inF(sr)) return fitNo('lista fora', sc);
+      if (Hh(sr) < Math.min(sc.scrollHeight * (Hh(sr) / Math.max(1, sc.clientHeight)), Hh(F) * 0.3)) return fitNo('lista espremida', sc);
+      if (r.top < sr.top || r.bottom > sr.bottom || r.left < sr.left || r.right > sr.right) continue;
+    } else if (!inF(r)) return fitNo('fora', el);
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    if (!hits(el, cx, cy)) return fitNo('coberto', el, document.elementFromPoint(cx, cy));
+    if (!rot && r.width > 40 && (!hits(el, r.left + 4, cy) || !hits(el, r.right - 4, cy))) return fitNo('borda coberta', el);
+    if (rot && r.height > 40 && (!hits(el, cx, r.top + 4) || !hits(el, cx, r.bottom - 4))) return fitNo('borda coberta', el);   // bordas de botões largos também
+  }
+  for (const sc of t.querySelectorAll(FIT.natural)) {   // lista que encolheu até sumir (altura ~0) também conta como espremida
+    let shown = true; for (let a = sc; a && a !== document.body; a = a.parentElement) { const c = getComputedStyle(a); if (c.display === 'none' || c.visibility === 'hidden') { shown = false; break; } }
+    if (!shown || !sc.children.length) continue;
+    const sr = sc.getBoundingClientRect();
+    if (Hh(sr) < Math.min(sc.scrollHeight * fitZoomOf(sc) * (+getComputedStyle(sc).zoom || 1), Hh(F) * 0.3) - 1) return fitNo('lista sumiu', sc);
+  }
+  for (const sc of t.querySelectorAll('*')) {   // toda lista com rolagem precisa mostrar um pedaço útil
+    if (sc.scrollHeight <= sc.clientHeight + 1 || !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) continue;
+    const sr = fitVisible(sc); if (!sr) continue;
+    if (strict && !sc.matches(FIT.natural)) return fitNo('rolaria', sc);   // 1ª tentativa: só listas compridas podem rolar
+    if (Hh(sr) < Math.min(sc.scrollHeight * (Hh(sr) / Math.max(1, sc.clientHeight)), Hh(F) * 0.3)) return fitNo('lista espremida', sc);
+  }
+  if (t.classList.contains('scr')) {   // blocos da tela (logo, menu, painéis, rodapé) não podem se sobrepor
+    const B = [];
+    for (const c of t.children) {
+      if (!fitVisible(c) || c.classList.contains('modal') || c.id === 'ver') continue;
+      const e = fitExtent(c, c.classList.contains('panel') ? 0 : 1); if (e) B.push({ c, ...e });
+    }
+    for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++) {
+      const a = B[i], b = B[j], w = Math.min(a.r, b.r) - Math.max(a.l, b.l), h = Math.min(a.b, b.b) - Math.max(a.t, b.t);
+      if (w > 3 && h > 3) return fitNo('sobreposto', a.c, b.c);
+    }
+  }
+  for (const h of t.querySelectorAll('h3, .tname, .cname, .panel, .rescard')) { const r = fitVisible(h); if (r && !fitScroller(h, t) && !inF(r)) return fitNo('painel fora', h); }
+  return true;
+}
+// área ocupada de verdade: caixa + conteúdo que vaza (listas com rolagem e recortes contam só a própria caixa)
+function fitExtent(el, skipSelf) {
+  const r = fitVisible(el); if (!r) return null;
+  const cs = getComputedStyle(el);
+  if (cs.position === 'fixed' && el.classList.contains('modal')) return null;
+  let e = skipSelf && el.children.length ? null : { l: r.left, t: r.top, r: r.right, b: r.bottom };
+  if (/(auto|scroll|hidden|clip)/.test(cs.overflowY + cs.overflowX)) return e || { l: r.left, t: r.top, r: r.right, b: r.bottom };
+  for (const k of el.children) {
+    const x = fitExtent(k, 0); if (!x) continue;
+    e = e ? { l: Math.min(e.l, x.l), t: Math.min(e.t, x.t), r: Math.max(e.r, x.r), b: Math.max(e.b, x.b) } : x;
+  }
+  return e;
+}
+function fitZoomOf(el) { let z = 1; for (let a = el.parentElement; a && a !== document.documentElement; a = a.parentElement) z *= +getComputedStyle(a).zoom || 1; return z; }
+function fitSig(t) { let h = 0; for (const c of t.children) h += c.offsetHeight * 3 + c.offsetWidth; return t.id + ':' + h + ':' + t.getElementsByTagName('*').length; }
+function fitSupported() {   // o navegador mede os elementos já com o zoom? (senão fica o ajuste antigo, um zoom só)
+  if (FIT.sup !== undefined) return FIT.sup;
+  const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:100px;height:10px;zoom:0.5;visibility:hidden';
+  document.body.appendChild(d); const w = d.getBoundingClientRect(), ww = ROT90() ? w.height : w.width; d.remove();
+  return (FIT.sup = Math.abs(ww - 50) < 3);
+}
+function fitScreens() {
+  if (!IS_MOBILE || !fitSupported()) return;
+  const T = fitTargets(), key = VW() + 'x' + VH() + '|' + T.map(fitSig).join('|');
+  if (key === FIT.k) return;
+  const hidden = [];
+  for (const t of T) {
+    // a tela de fundo é medida sem as janelas por cima
+    const over = T.filter(o => o !== t && !o.contains(t)); over.forEach(o => { if (o.style.visibility !== 'hidden') { o.style.visibility = 'hidden'; hidden.push(o); } });
+    const pz = fitZoomOf(t), zmax = 1;
+    let best = null;
+    t.style.overflow = '';
+    for (let z = zmax; z >= FIT.zread - 1e-6 && best === null; z -= 0.03) { t.style.zoom = (z / pz).toFixed(4); if (fitOk(t, true)) best = z; }   // sem rolar
+    for (let z = FIT.zread; z >= FIT.zmin - 1e-6 && best === null; z -= 0.03) { t.style.zoom = (z / pz).toFixed(4); if (fitOk(t, false)) best = z; }   // rolando o necessário
+    if (best === null) { t.style.zoom = (FIT.zmin / pz).toFixed(4); t.style.overflow = 'auto'; }   // não coube: a tela rola
+    t.dataset.fitz = best === null ? 'scroll' : best.toFixed(2);
+    hidden.splice(0).forEach(o => o.style.visibility = '');
+  }
+  FIT.k = VW() + 'x' + VH() + '|' + T.map(fitSig).join('|');
+}
+
 /* ---------- Controles por toque (modo celular) ----------
    Esquerda: ◀ ▶ (virar). Direita: ACELERAR (grande, embaixo), FREIO ao lado, DRIFT em cima (já acelera).
    Vários dedos ao mesmo tempo; dá para deslizar o dedo de um botão para o outro sem soltar. */
@@ -4479,13 +4623,19 @@ if (IS_MOBILE) {
   };
   setRot(); addEventListener('resize', setRot); addEventListener('orientationchange', () => setTimeout(setRot, 300));
   if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(setRot, 50));   // barras do Safari aparecem/somem
-  const fitUI = () => { document.body.style.setProperty('--uiz', Math.max(0.42, Math.min(1, VH() / (ROT90() ? 700 : 620), VW() / 1150)).toFixed(3)); rects = null; };
+  const fitUI = () => {
+    document.body.style.setProperty('--uiz', Math.max(0.42, Math.min(1, VH() / (ROT90() ? 700 : 620), VW() / 1150)).toFixed(3)); rects = null;
+    document.body.classList.toggle('narrow', VW() < 700); document.body.classList.toggle('lowh', VH() < 520); document.body.classList.toggle('hudtight', VW() < 900);
+    FIT.k = ''; fitScreens();
+  };
   fitUI(); addEventListener('resize', fitUI);
+  setInterval(fitScreens, 350);   // conteúdo mudou (sala, ranking, resultado...): reajusta
   addEventListener('orientationchange', () => { rects = null; });
   // mostra os botões só na largada/corrida (fora disso, solta tudo)
   let wasRacing = false;
   setInterval(() => {
     const racing = (state === 'race' || state === 'countdown') && !mpPause;
+    document.body.classList.toggle('cd', state === 'countdown');
     if (racing !== wasRacing) { wasRacing = racing; document.body.classList.toggle('racing', racing); rects = null; if (!racing) setT({ l: false, r: false, g: false, b: false, d: false }); }
   }, 100);
   // primeiro toque: tela cheia e trava deitado (Android; no iPhone o navegador não permite)
